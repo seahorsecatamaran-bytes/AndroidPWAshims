@@ -83,6 +83,6 @@ dualmode-pwa-toolkit/
 ## Live Demo & GitHub Pages URLs
 
 Once pushed to GitHub with Pages enabled on main branch:
-* Portal Hub: https://seahorsecatamaran-bytes.github.io/AndroidPWAshims/
+* Portal Hub: [https://seahorsecatamaran-bytes.github.io/AndroidPWAshims/](https://seahorsecatamaran-bytes.github.io/AndroidPWAshims/)
 * Interactive Test Harness (v4): https://seahorsecatamaran-bytes.github.io/AndroidPWAshims/examples/demo-app/
 * Production PWA: https://seahorsecatamaran-bytes.github.io/AndroidPWAshims/examples/production-pwa/
