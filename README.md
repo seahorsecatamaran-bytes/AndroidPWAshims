@@ -25,7 +25,7 @@ A production-grade architecture and library for writing Progressive Web Apps tha
 ## Repository Structure
 
 dualmode-pwa-toolkit/
-├── index.html                      # GitHub Pages portal
+├── index.html                      # GitHub Pages portal 
 ├── package.json                    # Package manifest & metadata
 ├── LICENSE                         # MIT License
 ├── README.md                       # Documentation & API reference
