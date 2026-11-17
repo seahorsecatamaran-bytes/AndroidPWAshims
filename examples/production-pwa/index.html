@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1120">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon-192.svg" type="image/svg+xml">
+  <title>Anchor Watch NG // Production PWA</title>
+</head>
+<body style="background:#0b1120;color:#edf3f7;font-family:sans-serif;padding:24px;">
+  <h1>Anchor Watch NG (Production Build)</h1>
+  <p>Service Worker, Android HAL, WebXR Shim, and Persistent Vault modules loaded.</p>
+  <script type="module">
+    import { AndroidHAL } from './android-hal.js';
+    import { probeXrCapabilities } from './xr-shim.js';
+    import { openAnchorVault } from './db.js';
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+    probeXrCapabilities().then((caps) => console.log('XR:', caps));
+    console.log('HAL ready:', Boolean(AndroidHAL), Boolean(openAnchorVault));
+  </script>
+</body>
+</html>

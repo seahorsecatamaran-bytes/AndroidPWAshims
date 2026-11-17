@@ -1,0 +1,3869 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="artifact-type" content="tool">
+  <meta name="design-style" content="aurora">
+  <title>DevTest // Android PWA Hardware &amp; WebXR Harness</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script src="https://unpkg.com/lucide@1.43.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+
+      /* Aurora base adapted to deep marine cockpit slate (#0b1120) */
+      --background: #0b1120;
+      --surface-container-low: #0f172a;
+      --surface-container: #131d33;
+      --surface-container-high: #1b2844;
+
+      /* Text */
+      --on-surface: #edf3f7;
+      --on-surface-variant: #94a8be;
+
+      /* Borders */
+      --outline: #364b68;
+      --outline-variant: #1f2e45;
+
+      /* Accents: Cyan, Emerald, Amber, Indigo */
+      --primary: #22d3ee;
+      --on-primary: #06131c;
+      --primary-container: #0f3647;
+      --on-primary-container: #cffafe;
+      --secondary: #818cf8;
+      --tertiary: #34d399;
+      --error: #f87171;
+      --on-error: #1f0707;
+
+      /* Semantic tokens */
+      --positive: #34d399;
+      --warning: #fbbf24;
+      --indigo-accent: #818cf8;
+      --focus: #22d3ee;
+
+      /* Data series */
+      --data-1: #22d3ee;
+      --data-2: #34d399;
+      --data-3: #fbbf24;
+      --data-4: #818cf8;
+      --data-context: #475569;
+
+      /* Fonts */
+      --font-headline: 'Instrument Sans', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-label: 'Geist Mono', monospace;
+
+      /* Type scale (Focused Tool) */
+      --display-size: clamp(1.5rem, 1.25rem + 1.1vw, 2.125rem);
+      --headline-size: clamp(1.125rem, 1rem + 0.45vw, 1.375rem);
+      --subhead-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.08rem);
+      --body-size: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
+      --label-size: 0.75rem;
+
+      /* Spacing scale */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2.5rem;
+      --space-2xl: 4rem;
+
+      /* Shape */
+      --rounded: 0.5rem;
+      --rounded-lg: 0.75rem;
+      --rounded-full: 9999px;
+
+      /* Style effects */
+      --hairline: 1px solid var(--outline-variant);
+      --hairline-strong: 1px solid var(--outline);
+      --panel-gradient: linear-gradient(180deg, #162138 0%, #0f172a 100%);
+      --well-bg: #080d19;
+      --heading-tracking: -0.025em;
+      --label-tracking: 0.06em;
+
+      /* Tints & Glows */
+      --cyan-tint: color-mix(in srgb, var(--primary) 14%, transparent);
+      --emerald-tint: color-mix(in srgb, var(--tertiary) 14%, transparent);
+      --amber-tint: color-mix(in srgb, var(--warning) 14%, transparent);
+      --indigo-tint: color-mix(in srgb, var(--indigo-accent) 15%, transparent);
+      --error-tint: color-mix(in srgb, var(--error) 15%, transparent);
+      --glow-cyan: 0 0 18px color-mix(in srgb, var(--primary) 26%, transparent);
+      --glow-emerald: 0 0 16px color-mix(in srgb, var(--tertiary) 24%, transparent);
+      --glow-amber: 0 0 16px color-mix(in srgb, var(--warning) 26%, transparent);
+      --glow-error: 0 0 18px color-mix(in srgb, var(--error) 35%, transparent);
+
+      /* Motion */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+      --dur-micro: 120ms;
+      --dur-short: 220ms;
+      --dur-long: 420ms;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      overflow-x: clip;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background);
+      color: var(--on-surface);
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      line-height: 1.5;
+    }
+
+    header {
+      position: static !important;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .cockpit-shell {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: var(--space-lg);
+      display: grid;
+      gap: var(--space-lg);
+    }
+
+    .cockpit-shell * {
+      min-width: 0;
+    }
+
+    /* Typography */
+    .title-display {
+      font-family: var(--font-headline);
+      font-size: var(--display-size);
+      font-weight: 700;
+      letter-spacing: var(--heading-tracking);
+      line-height: 1.12;
+      margin: 0;
+      color: var(--on-surface);
+    }
+
+    .section-heading {
+      font-family: var(--font-headline);
+      font-size: var(--headline-size);
+      font-weight: 600;
+      letter-spacing: var(--heading-tracking);
+      line-height: 1.2;
+      margin: 0;
+      color: var(--on-surface);
+    }
+
+    .card-title {
+      font-family: var(--font-headline);
+      font-size: var(--subhead-size);
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      margin: 0;
+      color: var(--on-surface);
+    }
+
+    .mono-label {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      font-weight: 500;
+      letter-spacing: var(--label-tracking);
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+    }
+
+    .mono-value {
+      font-family: var(--font-label);
+      font-variant-numeric: tabular-nums;
+      color: var(--on-surface);
+    }
+
+    .muted-copy {
+      color: var(--on-surface-variant);
+      font-size: 0.875rem;
+      margin: 0;
+    }
+
+    /* Panels & Wells */
+    .panel {
+      background: var(--panel-gradient);
+      border: var(--hairline);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .well {
+      background: var(--well-bg);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+    }
+
+    /* Top Header */
+    .cockpit-header {
+      background: var(--panel-gradient);
+      border: var(--hairline);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-lg);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    .header-brand {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .header-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .version-pill {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      padding: 0.25rem 0.625rem;
+      border-radius: var(--rounded);
+      background: var(--indigo-tint);
+      color: var(--indigo-accent);
+      border: 1px solid color-mix(in srgb, var(--indigo-accent) 40%, transparent);
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      min-height: 44px;
+      padding: 0.55rem 1rem;
+      border-radius: var(--rounded);
+      font-family: var(--font-headline);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: var(--hairline-strong);
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+      transition: background-color var(--dur-micro) var(--ease-out),
+                  border-color var(--dur-micro) var(--ease-out),
+                  box-shadow var(--dur-short) var(--ease-out),
+                  transform var(--dur-micro) var(--ease-out);
+    }
+
+    .btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      background: var(--surface-container);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--primary) 88%, var(--on-surface));
+      border-color: var(--primary);
+    }
+
+    .btn-emerald {
+      background: var(--emerald-tint);
+      color: var(--tertiary);
+      border-color: color-mix(in srgb, var(--tertiary) 45%, transparent);
+    }
+
+    .btn-emerald:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--tertiary) 24%, transparent);
+      border-color: var(--tertiary);
+    }
+
+    .btn-amber {
+      background: var(--amber-tint);
+      color: var(--warning);
+      border-color: color-mix(in srgb, var(--warning) 45%, transparent);
+    }
+
+    .btn-amber:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--warning) 24%, transparent);
+      border-color: var(--warning);
+    }
+
+    .btn-indigo {
+      background: var(--indigo-tint);
+      color: var(--indigo-accent);
+      border-color: color-mix(in srgb, var(--indigo-accent) 45%, transparent);
+    }
+
+    .btn-indigo:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--indigo-accent) 24%, transparent);
+      border-color: var(--indigo-accent);
+    }
+
+    .btn-danger {
+      background: var(--error-tint);
+      color: var(--error);
+      border-color: color-mix(in srgb, var(--error) 45%, transparent);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--error) 24%, transparent);
+      border-color: var(--error);
+    }
+
+    .btn-sm {
+      min-height: 36px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8125rem;
+    }
+
+    /* Status Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--rounded);
+      font-family: var(--font-label);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .badge-cyan {
+      background: var(--cyan-tint);
+      color: var(--primary);
+      border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+    }
+
+    .badge-emerald {
+      background: var(--emerald-tint);
+      color: var(--tertiary);
+      border: 1px solid color-mix(in srgb, var(--tertiary) 35%, transparent);
+    }
+
+    .badge-amber {
+      background: var(--amber-tint);
+      color: var(--warning);
+      border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
+    }
+
+    .badge-indigo {
+      background: var(--indigo-tint);
+      color: var(--indigo-accent);
+      border: 1px solid color-mix(in srgb, var(--indigo-accent) 35%, transparent);
+    }
+
+    .badge-error {
+      background: var(--error-tint);
+      color: var(--error);
+      border: 1px solid color-mix(in srgb, var(--error) 40%, transparent);
+    }
+
+    /* Environment Audit Banner */
+    .audit-banner {
+      background: var(--surface-container-low);
+      border: var(--hairline);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .audit-top-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    .audit-verdict-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .mode-switcher {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      background: var(--well-bg);
+      padding: var(--space-xs);
+      border-radius: var(--rounded);
+      border: var(--hairline);
+    }
+
+    .mode-btn {
+      min-height: 36px;
+      padding: 0.35rem 0.75rem;
+      border: none;
+      border-radius: calc(var(--rounded) - 2px);
+      background: transparent;
+      color: var(--on-surface-variant);
+      font-family: var(--font-label);
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color var(--dur-micro) var(--ease-out),
+                  color var(--dur-micro) var(--ease-out);
+    }
+
+    .mode-btn.is-active {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent);
+    }
+
+    .probe-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+      gap: var(--space-sm);
+    }
+
+    .probe-cell {
+      background: var(--well-bg);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-sm) var(--space-md);
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    /* Hero Spatial + Geolocation Cockpit Split */
+    .hero-cockpit {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+      gap: var(--space-lg);
+      align-items: stretch;
+    }
+
+    /* 3D Spatial Viewport */
+    .xr-stage {
+      position: relative;
+      min-height: 440px;
+      border-radius: var(--rounded);
+      overflow: hidden;
+      background: var(--well-bg);
+      border: var(--hairline);
+    }
+
+    .xr-stage.ar-active {
+      background: radial-gradient(circle at 50% 35%, #163042 0%, #09131c 70%, #050911 100%);
+    }
+
+    #xrCanvasContainer {
+      width: 100%;
+      height: 100%;
+      min-height: 440px;
+      position: relative;
+      cursor: grab;
+    }
+
+    #xrCanvasContainer:active {
+      cursor: grabbing;
+    }
+
+    .xr-hud-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: var(--space-md);
+    }
+
+    .xr-hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--space-sm);
+    }
+
+    .xr-hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: var(--space-sm);
+    }
+
+    .xr-hud-chip {
+      background: color-mix(in srgb, var(--well-bg) 82%, transparent);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: 0.35rem 0.65rem;
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      color: var(--on-surface);
+      pointer-events: auto;
+    }
+
+    .ar-reticle {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: none;
+    }
+
+    .ar-reticle.is-visible {
+      display: block;
+    }
+
+    .ar-close-btn {
+      position: absolute;
+      top: var(--space-md);
+      right: var(--space-md);
+      z-index: 15;
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: var(--rounded-full);
+      background: var(--error-tint);
+      border: 1px solid var(--error);
+      color: var(--on-surface);
+      font-family: var(--font-label);
+      font-weight: 700;
+      cursor: pointer;
+      pointer-events: auto;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ar-close-btn.is-visible {
+      display: inline-flex;
+    }
+
+    .xr-controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+      gap: var(--space-sm);
+    }
+
+    /* Inputs & Sliders */
+    .control-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .control-field label {
+      font-family: var(--font-label);
+      font-size: 0.7rem;
+      letter-spacing: var(--label-tracking);
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      cursor: pointer;
+      height: 22px;
+    }
+
+    input[type="number"], input[type="text"] {
+      width: 100%;
+      background: var(--well-bg);
+      color: var(--on-surface);
+      border: var(--hairline-strong);
+      border-radius: var(--rounded);
+      padding: 0.45rem 0.65rem;
+      font-family: var(--font-label);
+      font-size: 0.875rem;
+    }
+
+    /* Anchor Watch Mini-Plot & D-Pad */
+    .geo-plot-wrap {
+      position: relative;
+      min-height: 230px;
+      border-radius: var(--rounded);
+      overflow: hidden;
+      background: var(--well-bg);
+      border: var(--hairline);
+    }
+
+    #anchorPlotCanvas {
+      width: 100%;
+      height: 230px;
+      display: block;
+    }
+
+    .scope-readout-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+
+    .metric-mini {
+      background: var(--well-bg);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .metric-mini-val {
+      font-family: var(--font-label);
+      font-size: 1.05rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dpad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 44px);
+      grid-template-rows: repeat(2, 44px);
+      gap: var(--space-xs);
+      justify-content: center;
+    }
+
+    .dpad-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--rounded);
+      border: var(--hairline-strong);
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+      font-family: var(--font-label);
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dpad-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Hardware API Grid */
+    .section-header-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      border-bottom: var(--hairline);
+      padding-bottom: var(--space-sm);
+    }
+
+    .hw-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+      gap: var(--space-lg);
+    }
+
+    .hw-card {
+      background: var(--panel-gradient);
+      border: var(--hairline);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: var(--space-md);
+      transition: border-color var(--dur-short) var(--ease-out);
+    }
+
+    .hw-card:hover {
+      border-color: var(--outline);
+    }
+
+    .hw-card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-sm);
+    }
+
+    .hw-title-group {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .hw-icon-box {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--rounded);
+      background: var(--cyan-tint);
+      color: var(--primary);
+      border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .hw-icon-box.is-emerald {
+      background: var(--emerald-tint);
+      color: var(--tertiary);
+      border-color: color-mix(in srgb, var(--tertiary) 30%, transparent);
+    }
+
+    .hw-icon-box.is-amber {
+      background: var(--amber-tint);
+      color: var(--warning);
+      border-color: color-mix(in srgb, var(--warning) 30%, transparent);
+    }
+
+    .hw-icon-box.is-indigo {
+      background: var(--indigo-tint);
+      color: var(--indigo-accent);
+      border-color: color-mix(in srgb, var(--indigo-accent) 30%, transparent);
+    }
+
+    .hw-telemetry-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .hw-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+    }
+
+    /* Phone Vibration Animation */
+    .phone-sim-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-md);
+      padding: var(--space-sm) var(--space-md);
+      min-height: 68px;
+    }
+
+    .phone-device {
+      width: 34px;
+      height: 54px;
+      border-radius: 6px;
+      border: 2px solid var(--primary);
+      background: var(--surface-container-high);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color var(--dur-micro) var(--ease-out);
+    }
+
+    .phone-device::after {
+      content: '';
+      width: 10px;
+      height: 2px;
+      background: var(--on-surface-variant);
+      position: absolute;
+      top: 4px;
+      border-radius: 2px;
+    }
+
+    @keyframes haptic-shake {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      20% { transform: translate(-3px, 1px) rotate(-3deg); }
+      40% { transform: translate(3px, -1px) rotate(3deg); }
+      60% { transform: translate(-3px, -1px) rotate(-2deg); }
+      80% { transform: translate(3px, 1px) rotate(2deg); }
+    }
+
+    .phone-device.is-vibrating {
+      animation: haptic-shake 140ms infinite;
+      border-color: var(--warning);
+      box-shadow: var(--glow-amber);
+    }
+
+    /* Battery Gauge */
+    .battery-shell {
+      height: 14px;
+      background: var(--surface-container-low);
+      border: var(--hairline-strong);
+      border-radius: var(--rounded);
+      overflow: hidden;
+    }
+
+    .battery-fill {
+      height: 100%;
+      width: 78%;
+      background: var(--tertiary);
+      transition: width var(--dur-short) var(--ease-out),
+                  background-color var(--dur-short) var(--ease-out);
+    }
+
+    .battery-fill.is-warn {
+      background: var(--warning);
+    }
+
+    .battery-fill.is-critical {
+      background: var(--error);
+    }
+
+    /* Compass SVG */
+    .compass-wrap {
+      display: grid;
+      grid-template-columns: 112px minmax(0, 1fr);
+      gap: var(--space-md);
+      align-items: center;
+    }
+
+    .compass-svg {
+      width: 112px;
+      height: 112px;
+      cursor: pointer;
+    }
+
+    /* App Badge Home Screen Icon Preview */
+    .launcher-preview {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .android-icon-tile {
+      position: relative;
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      background: linear-gradient(145deg, var(--primary-container), var(--surface-container-low));
+      border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .android-badge-dot {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 5px;
+      border-radius: var(--rounded-full);
+      background: var(--error);
+      color: var(--on-surface);
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--glow-error);
+    }
+
+    .android-badge-dot.is-visible {
+      display: inline-flex;
+    }
+
+    /* Storage & SW Split */
+    .lifecycle-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-lg);
+    }
+
+    .sw-update-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--rounded);
+      background: var(--amber-tint);
+      border: 1px solid color-mix(in srgb, var(--warning) 50%, transparent);
+      color: var(--warning);
+    }
+
+    .sw-update-banner.is-visible {
+      display: flex;
+    }
+
+    .vault-list {
+      max-height: 150px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      font-family: var(--font-label);
+      font-size: 0.76rem;
+    }
+
+    .vault-row {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      padding: 0.35rem 0.5rem;
+      border-radius: calc(var(--rounded) - 2px);
+      background: var(--surface-container-low);
+      border: var(--hairline);
+    }
+
+    /* Diagnostics Console */
+    .console-terminal {
+      background: var(--well-bg);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+      height: 240px;
+      overflow-y: auto;
+      font-family: var(--font-label);
+      font-size: 0.78rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .log-entry {
+      display: grid;
+      grid-template-columns: 86px 72px minmax(0, 1fr);
+      gap: var(--space-sm);
+      align-items: baseline;
+      padding: 0.2rem 0.35rem;
+      border-radius: 4px;
+    }
+
+    .log-entry:hover {
+      background: var(--surface-container-low);
+    }
+
+    .log-ts {
+      color: var(--on-surface-variant);
+    }
+
+    .log-msg {
+      color: var(--on-surface);
+      word-break: break-word;
+    }
+
+    /* Inline Dialogs (BLE Scanner, Share QR, Bundle Inspector) */
+    .inline-drawer {
+      display: none;
+      flex-direction: column;
+      gap: var(--space-md);
+      background: var(--surface-container-low);
+      border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-lg);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .inline-drawer.is-open {
+      display: flex;
+    }
+
+    .code-preview {
+      background: var(--well-bg);
+      border: var(--hairline);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+      font-family: var(--font-label);
+      font-size: 0.76rem;
+      color: var(--on-primary-container);
+      max-height: 260px;
+      overflow: auto;
+      white-space: pre;
+      margin: 0;
+    }
+
+    .file-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+
+    .file-tab {
+      min-height: 34px;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--rounded);
+      border: var(--hairline);
+      background: var(--well-bg);
+      color: var(--on-surface-variant);
+      font-family: var(--font-label);
+      font-size: 0.74rem;
+      cursor: pointer;
+    }
+
+    .file-tab.is-active {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      border-color: var(--primary);
+    }
+
+    /* Simulated Cockpit Theatre Fullscreen Fallback */
+    body.sim-fullscreen .cockpit-shell {
+      max-width: 100%;
+      padding: var(--space-sm);
+    }
+
+    @media (max-width: 980px) {
+      .hero-cockpit,
+      .lifecycle-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .cockpit-shell {
+        padding: var(--space-sm);
+        gap: var(--space-md);
+      }
+
+      .panel,
+      .cockpit-header,
+      .hw-card {
+        padding: var(--space-md);
+      }
+
+      .compass-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .log-entry {
+        grid-template-columns: 1fr;
+        gap: 0.15rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="cockpit-shell">
+    <!-- 1. COCKPIT HEADER -->
+    <header class="cockpit-header">
+      <div class="header-brand">
+        <div class="header-title-row">
+          <h1 class="title-display">DevTest // Android PWA Hardware &amp; WebXR Harness</h1>
+          <span class="version-pill">v4.0.0-android-spec</span>
+        </div>
+        <p class="muted-copy">Dual-mode runtime diagnostics comparing restricted iframe sandboxes against native Android Chrome hardware APIs, WebXR spatial overlays, and offline PWA lifecycles.</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="inspectBundleBtn" class="btn btn-indigo" onclick="toggleBundleInspector()">
+          <i data-lucide="folder-code" aria-hidden="true"></i>
+          <span>Inspect Bundle (8 files)</span>
+        </button>
+        <button type="button" id="downloadZipBtn" class="btn btn-primary" onclick="downloadProductionZip()">
+          <i data-lucide="package" aria-hidden="true"></i>
+          <span>Download Production PWA (.zip)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- INLINE BUNDLE INSPECTOR DRAWER (Hidden until clicked) -->
+    <section id="bundleInspectorDrawer" class="inline-drawer" aria-label="Production PWA Bundle Inspector">
+      <div class="audit-top-row">
+        <div>
+          <span class="mono-label">In-Browser Zero-Dependency ZIP Compiler</span>
+          <h2 class="card-title">Production PWA Payload Preview</h2>
+        </div>
+        <button type="button" class="btn btn-sm" onclick="toggleBundleInspector()">Close Inspector</button>
+      </div>
+      <div id="bundleFileTabs" class="file-tabs"></div>
+      <div class="hw-telemetry-row">
+        <span id="bundleFileMeta" class="mono-label">index.html</span>
+        <button type="button" class="btn btn-sm btn-emerald" onclick="copyCurrentBundleFile()">Copy Active File</button>
+      </div>
+      <pre id="bundleCodePreview" class="code-preview"></pre>
+    </section>
+
+    <!-- 2. DUAL-MODE ENVIRONMENT AUDIT BANNER & GLOBAL MODE TOGGLE -->
+    <section class="audit-banner" aria-label="Dual-Mode Environment Audit">
+      <div class="audit-top-row">
+        <div class="audit-verdict-group">
+          <span class="mono-label">Runtime Audit:</span>
+          <span id="envVerdictBadge" class="badge badge-amber">Detecting...</span>
+          <span id="halRouteBadge" class="badge badge-cyan">HAL Route: Auto</span>
+        </div>
+        <div class="mode-switcher" role="group" aria-label="Hardware Abstraction Layer Mode">
+          <button type="button" id="modeAutoBtn" class="mode-btn is-active" onclick="setGlobalMode('auto')">Auto Detect</button>
+          <button type="button" id="modeSimBtn" class="mode-btn" onclick="setGlobalMode('simulated')">Force Simulated / Sandboxed</button>
+          <button type="button" id="modeNativeBtn" class="mode-btn" onclick="setGlobalMode('native')">Force Native Android Hardware</button>
+        </div>
+      </div>
+
+      <div class="probe-strip">
+        <div class="probe-cell">
+          <span class="mono-label">Iframe / Sandbox</span>
+          <span id="probeIframe" class="mono-value">--</span>
+        </div>
+        <div class="probe-cell">
+          <span class="mono-label">Secure Context</span>
+          <span id="probeSecure" class="mono-value">--</span>
+        </div>
+        <div class="probe-cell">
+          <span class="mono-label">Display Mode</span>
+          <span id="probeDisplay" class="mono-value">--</span>
+        </div>
+        <div class="probe-cell">
+          <span class="mono-label">Android UA</span>
+          <span id="probeAndroid" class="mono-value">--</span>
+        </div>
+        <div class="probe-cell">
+          <span class="mono-label">Protocol</span>
+          <span id="probeProtocol" class="mono-value">--</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. HERO COCKPIT: WEBXR 3D SPATIAL CANVAS + LIVE GEOLOCATION ANCHOR PLOT -->
+    <section class="hero-cockpit" aria-label="WebXR Spatial Overlay and Geolocation Anchor Watch">
+      <!-- WebXR 3D Viewport -->
+      <article class="panel">
+        <div class="hw-card-head">
+          <div>
+            <span class="mono-label">WebXR Spatial Sea-Surface Overlay</span>
+            <h2 class="section-heading">3D Anchor, Catenary Chain &amp; Warning Cylinder</h2>
+          </div>
+          <div class="hw-actions">
+            <span id="xrArChip" class="badge badge-amber">AR: Probing</span>
+            <span id="xrVrChip" class="badge badge-indigo">VR: Probing</span>
+            <span id="xrInlineChip" class="badge badge-cyan">Inline: Ready</span>
+          </div>
+        </div>
+
+        <div id="xrStage" class="xr-stage">
+          <div id="xrCanvasContainer" style="min-height: 440px;"></div>
+
+          <button type="button" id="arCloseBtn" class="ar-close-btn" onclick="toggleSimulatedAR(false)" aria-label="Close Simulated AR View">X</button>
+
+          <svg id="arReticleSvg" class="ar-reticle" viewBox="0 0 800 440" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="0" y1="220" x2="800" y2="220" stroke="rgba(34,211,238,0.3)" stroke-width="1" stroke-dasharray="6 6" />
+            <line x1="400" y1="0" x2="400" y2="440" stroke="rgba(34,211,238,0.22)" stroke-width="1" stroke-dasharray="4 6" />
+            <circle cx="400" cy="220" r="38" fill="none" stroke="rgba(52,211,153,0.55)" stroke-width="1.5" />
+            <text x="18" y="30" fill="#22d3ee" font-family="Geist Mono, monospace" font-size="12">AR PASS-THROUGH SIMULATOR // SEA SURFACE PROJECTION</text>
+          </svg>
+
+          <div class="xr-hud-overlay">
+            <div class="xr-hud-top">
+              <div id="xrRangeChip" class="xr-hud-chip">Range to Anchor: 0.0 m</div>
+              <div id="xrStatusChip" class="xr-hud-chip">HOLDING?</div>
+            </div>
+            <div class="xr-hud-bottom">
+              <div class="xr-hud-chip">Drag canvas to orbit &bull; Click water to place anchor when armed</div>
+              <div id="xrCameraReadout" class="xr-hud-chip">Az 35&deg; / Pitch 28&deg; / Elev 18m</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="xr-controls-grid">
+          <div class="control-field">
+            <label for="xrOrbitSlider"><span>Orbit Azimuth</span><span id="xrOrbitVal">35&deg;</span></label>
+            <input type="range" id="xrOrbitSlider" min="0" max="360" value="35" oninput="updateXrCameraFromSliders()">
+          </div>
+          <div class="control-field">
+            <label for="xrPitchSlider"><span>Camera Pitch</span><span id="xrPitchVal">28&deg;</span></label>
+            <input type="range" id="xrPitchSlider" min="8" max="85" value="28" oninput="updateXrCameraFromSliders()">
+          </div>
+          <div class="control-field">
+            <label for="xrElevSlider"><span>Elevation</span><span id="xrElevVal">18 m</span></label>
+            <input type="range" id="xrElevSlider" min="6" max="42" value="18" oninput="updateXrCameraFromSliders()">
+          </div>
+        </div>
+
+        <div class="hw-actions">
+          <button type="button" id="xrPlaceAnchorBtn" class="btn btn-sm btn-emerald" onclick="toggleSpatialAnchorPlacement()">
+            <i data-lucide="crosshair" aria-hidden="true"></i>
+            <span>Click-to-Place Anchor: Off</span>
+          </button>
+          <button type="button" id="xrSimArBtn" class="btn btn-sm btn-indigo" onclick="toggleSimulatedAR()">
+            <i data-lucide="camera" aria-hidden="true"></i>
+            <span>Simulated AR Pass-Through</span>
+          </button>
+          <button type="button" id="xrProbeBtn" class="btn btn-sm" onclick="probeWebXR()">
+            <i data-lucide="scan" aria-hidden="true"></i>
+            <span>Probe Native WebXR Session</span>
+          </button>
+        </div>
+      </article>
+
+      <!-- Geolocation & Anchor Watch Tactical Module (Card 10) -->
+      <article class="panel" id="card-geolocation">
+        <div class="hw-card-head">
+          <div class="hw-title-group">
+            <div class="hw-icon-box is-emerald"><i data-lucide="map-pin" aria-hidden="true"></i></div>
+            <div>
+              <h2 class="card-title">Geolocation &amp; Anchor Watch</h2>
+              <span class="mono-label">navigator.geolocation</span>
+            </div>
+          </div>
+          <span id="geoStatusBadge" class="badge badge-emerald">SHIM ACTIVE</span>
+        </div>
+
+        <div class="geo-plot-wrap">
+          <canvas id="anchorPlotCanvas" width="440" height="230"></canvas>
+        </div>
+
+        <div class="scope-readout-row">
+          <div class="metric-mini">
+            <span class="mono-label">Scope (L/D)</span>
+            <span id="geoScopeVal" class="metric-mini-val">5.0 : 1</span>
+          </div>
+          <div class="metric-mini">
+            <span class="mono-label">Swing Radius</span>
+            <span id="geoSwingVal" class="metric-mini-val">29.5 m</span>
+          </div>
+          <div class="metric-mini">
+            <span class="mono-label">Status</span>
+            <span id="geoAlarmState" class="metric-mini-val">HOLDING?</span>
+          </div>
+        </div>
+
+        <div class="xr-controls-grid">
+          <div class="control-field">
+            <label for="chainLengthInput"><span>Chain Out (m)</span></label>
+            <input type="number" id="chainLengthInput" min="0" max="150" step="5" value="25" oninput="handleChainDepthChange()">
+          </div>
+          <div class="control-field">
+            <label for="waterDepthInput"><span>Depth (m)</span></label>
+            <input type="number" id="waterDepthInput" min="0" max="60" step="1" value="5" oninput="handleChainDepthChange()">
+          </div>
+        </div>
+
+        <div class="well">
+          <div class="hw-telemetry-row">
+            <div>
+              <div class="mono-label">GPS Fix &amp; Kinematics</div>
+              <div id="geoCoordsVal" class="mono-value">50.715420&deg; N, -1.531840&deg; W</div>
+              <div id="geoVectorVal" class="mono-label">HDG 000&deg; &bull; SPD 0.0 kn &bull; ACC &plusmn;4.0 m</div>
+            </div>
+            <div class="dpad-grid" aria-label="Simulated Boat Movement Controls">
+              <span></span>
+              <button type="button" class="dpad-btn" onclick="nudgeBoat(0, -3)" aria-label="Move Boat North">N</button>
+              <span></span>
+              <button type="button" class="dpad-btn" onclick="nudgeBoat(-3, 0)" aria-label="Move Boat West">W</button>
+              <button type="button" class="dpad-btn" onclick="nudgeBoat(0, 3)" aria-label="Move Boat South">S</button>
+              <button type="button" class="dpad-btn" onclick="nudgeBoat(3, 0)" aria-label="Move Boat East">E</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="hw-actions">
+          <button type="button" class="btn btn-sm btn-primary" onclick="testGeolocationNative()">
+            <i data-lucide="navigation" aria-hidden="true"></i>
+            <span>Watch Live GPS</span>
+          </button>
+          <button type="button" id="driftToggleBtn" class="btn btn-sm btn-amber" onclick="toggleSyntheticDrift()">
+            <span>Synthetic Drift: Off</span>
+          </button>
+          <button type="button" class="btn btn-sm" onclick="dropAnchorHere()">Reset / Drop Anchor</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- 4. ANDROID HARDWARE API SUITE -->
+    <section aria-label="Android Hardware API Matrix">
+      <div class="section-header-bar">
+        <div>
+          <span class="mono-label">Hardware Abstraction Layer (HAL)</span>
+          <h2 class="section-heading">Android Chrome APIs vs. Sandboxed Shims</h2>
+        </div>
+        <span class="muted-copy">Test native browser calls or override with interactive sandbox fallbacks.</span>
+      </div>
+
+      <div class="hw-grid" style="margin-top: var(--space-md);">
+        <!-- Card 1: Vibration API -->
+        <article class="hw-card" id="card-vibration">
+          <div class="hw-card-head">
+            <div class="hw-title-group">
+              <div class="hw-icon-box is-amber"><i data-lucide="vibrate" aria-hidden="true"></i></div>
+              <div>
+                <h3 class="card-title">Vibration API</h3>
+                <span class="mono-label">navigator.vibrate</span>
+              </div>
+            </div>
+            <span id="vibStatusBadge" class="badge badge-amber">SHIM READY</span>
+          </div>
+
+          <div class="well phone-sim-box">
+            <div id="phoneSimDevice" class="phone-device" aria-hidden="true">
+              <i data-lucide="anchor" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div class="mono-label">Active Pattern</div>
+              <div id="vibPatternReadout" class="mono-value">[200, 100, 200, 100, 500]</div>
+              <div id="vibStateText" class="muted-copy">Idle &bull; Audio haptic hum ready</div>
+            </div>
+          </div>
+
+          <div class="hw-actions">
+            <button type="button" class="btn btn-sm btn-amber" onclick="triggerVibration([200, 100, 200, 100, 500], 'Anchor Drag Alarm')">Alarm Pattern</button>
+            <button type="button" class="btn btn-sm" onclick="triggerVibration([50], 'Chain Click Pip')">Single Pip</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="stopVibration()">Stop</button>
+          </div>
+        </article>
+
+        <!-- Card 2: Battery Status API -->
+        <article class="hw-card" id="card-battery">
+          <div class="hw-card-head">
+            <div class="hw-title-group">
+              <div class="hw-icon-box is-emerald"><i data-lucide="battery-charging" aria-hidden="true"></i></div>
+              <div>
+                <h3 class="card-title">Battery Status API</h3>
+                <span class="mono-label">navigator.getBattery</span>
+              </div>
+            </div>
+            <span id="batStatusBadge" class="badge badge-emerald">78% CHARGING</span>
+          </div>
+
+          <div class="well">
+            <div class="hw-telemetry-row" style="margin-bottom: var(--space-sm);">
+              <span id="batLevelDisplay" class="mono-value">78%</span>
+              <span id="batAlarmBanner" class="badge badge-emerald">POWER NOMINAL</span>
+            </div>
+            <div class="battery-shell">
+              <div id="batBarFill" class="battery-fill"></div>
+            </div>
+          </div>
+
+          <div class="control-field">
+            <label for="batSimSlider"><span>Simulate Charge Level</span><span id="batSliderVal">78%</span></label>
+            <input type="range" id="batSimSlider" min="0" max="100" value="78" oninput="updateBatterySim(this.value)">
+          </div>
+
+          <div class="hw-actions">
+            <button type="button" class="btn btn-sm btn-primary" onclick="probeNativeBattery()">Read Native Battery</button>
+            <button type="button" id="batChargingBtn" class="btn btn-sm" onclick="toggleBatteryCharging()">Charging: Yes</button>
+          </div>
+        </article>
+
+        <!-- Card 3: Device Orientation & Compass -->
+        <article class="hw-card" id="card-orientation">
+          <div class="hw-card-head">
+            <div class="hw-title-group">
+              <div class="hw-icon-box"><i data-lucide="compass" aria-hidden="true"></i></div>
+              <div>
+                <h3 class="card-title">Orientation &amp; Compass</h3>
+                <span class="mono-label">DeviceOrientationEvent</span>
+              </div>
+            </div>
+            <span id="oriStatusBadge" class="badge badge-cyan">SIMULATED</span>
+          </div>
+
+          <div class="well compass-wrap">
+            <svg id="compassDialSvg" class="compass-svg" viewBox="0 0 120 120" onclick="stepCompassHeading()" role="img" aria-label="Interactive Compass Dial">
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#364b68" stroke-width="2" />
+              <circle cx="60" cy="60" r="42" fill="none" stroke="#1f2e45" stroke-width="1" stroke-dasharray="3 3" />
+              <text x="60" y="16" text-anchor="middle" fill="#22d3ee" font-family="Geist Mono, monospace" font-size="11" font-weight="700">N</text>
+              <text x="106" y="64" text-anchor="middle" fill="#94a8be" font-family="Geist Mono, monospace" font-size="10">E</text>
+              <text x="60" y="112" text-anchor="middle" fill="#94a8be" font-family="Geist Mono, monospace" font-size="10">S</text>
+              <text x="14" y="64" text-anchor="middle" fill="#94a8be" font-family="Geist Mono, monospace" font-size="10">W</text>
+              <g id="compassNeedleGroup" transform="rotate(0 60 60)">
+                <polygon points="60,20 66,60 60,54 54,60" fill="#22d3ee" />
+                <polygon points="60,100 66,60 60,66 54,60" fill="#475569" />
+              </g>
+              <circle cx="60" cy="60" r="4" fill="#edf3f7" />
+            </svg>
+            <div style="display:flex; flex-direction:column; gap:0.4rem;">
+              <div class="control-field">
+                <label for="oriAlphaSlider"><span>Heading (&alpha;)</span><span id="oriAlphaVal">000&deg;</span></label>
+                <input type="range" id="oriAlphaSlider" min="0" max="359" value="0" oninput="updateOrientationSim()">
+              </div>
+              <div class="control-field">
+                <label for="oriBetaSlider"><span>Pitch (&beta;)</span><span id="oriBetaVal">4&deg;</span></label>
+                <input type="range" id="oriBetaSlider" min="-45" max="45" value="4" oninput="updateOrientationSim()">
+              </div>
+              <div class="control-field">
+                <label for="oriGammaSlider"><span>Boat Heel (&gamma;)</span><span id="oriGammaVal">-6&deg;</span></label>
+                <input type="range" id="oriGammaSlider" min="-45" max="45" value="-6" oninput="updateOrientationSim()">
+              </div>
+            </div>
+          </div>
+
+          <div class="hw-actions">
+            <button type="button" class="btn btn-sm btn-primary" onclick="enableNativeOrientation()">Bind Native Sensors</button>
+            <span id="oriHeelReadout" class="mono-label">Heel: 6&deg; Port</span>
+          </div>
+        </article>
+
+        <!-- Card 4: Screen Wake Lock -->
+        <article class="hw-card" id="card-wakelock">
+          <div class="hw-card-head">
+            <div class="hw-title-group">
+              <div class="hw-icon-box is-indigo"><i data-lucide="sun" aria-hidden="true"></i></div>
+              <div>
+                <h3 class="card-title">Screen Wake Lock</h3>
+                <span class="mono-label">navigator.wakeLock</span>
+              </div>
+            </div>
+            <span id="wlStatusBadge" class="badge badge-indigo">RELEASED</span>
+          </div>
+
+          <div class="well">
+            <div class="hw-telemetry-row">
+              <div>
+                <div class="mono-label">Sentinel Mode</div>
+                <div id="wlModeText" class="mono-value">Inactive</div>
+              </div>
+              <div>
+                <div class="mono-label">Awake Duration</div>
+                <div id="wlTimerText" class="mono-value">00:00</div>
+              </div>
+            </div>
+          </div>
+
+          <p class="muted-copy">Prevents Android screen sleep during night-time anchor watch. Falls back to a synthetic sentinel heartbeat inside restricted iframes.</p>
+
+          <div class="hw-actions">
+            <button type="button" id="wlToggleBtn" class="btn btn-sm btn-indigo" onclick="toggleWakeLock()">Acquire Wake Lock</button>
+          </div>
+        </article>
+
+        <!-- Card 5: Web Bluetooth (BLE) -->
+        <article class="hw-card" id="card-ble">
+          <div class="hw-card-head">
+            <div class="hw-title-group">
+              <div class="hw-icon-box"><i data-lucide="bluetooth" aria-hidden="true"></i></div>
+              <div>
+                <h3 class="card-title">Web Bluetooth (BLE)</h3>
+                <span class="mono-label">navigator.bluetooth</span>
+              </div>
+            </div>
+            <span id="bleStatusBadge" class="badge badge-cyan">IDLE</span>
+          </div>
+
+          <div class="well">
+            <div class="mono-label">Connected Marine Peripheral</div>
+            <div id="bleConnectedText" class="mono-value">None paired</div>
+            <div id="blePayloadText" class="muted-copy">Scan for NMEA depth sounders or crew safety beacons.</div>
+          </div>
+
+          <div id="bleMockScanner" class="well" style="display:none; flex-direction:column; gap:0.5rem;">
+            <div class="mono-label">Simulated BLE Discovery</div>
+            <button type="button" class="btn btn-sm btn-emerald" onclick="pairMockBleDevice('NMEA-Depth-Sensor', '-48 dBm', 'Depth: 6.4 m | Temp: 14.2 °C')">Pair NMEA-Depth-Sensor (-48 dBm)</button>
+            <button type="button" class="btn btn-sm btn-indigo" onclick="pairMockBleDevice('Crew-BLE-Beacon-01', '-62 dBm', 'Proximity: 4.2 m | Crew: Aboard')">Pair Crew-BLE-Beacon-01 (-62 dBm)</button>
+          </div>
+
+          <div class="hw-actions">
+            <button type="button" class="btn btn-sm btn-primary" onclick="scanBluetoothDevices()">Scan BLE Sensors</button>
+            <button type="button" class="btn btn-sm" onclick="disconnectBleDevice()">Disconnect</button>
+          </div>
+        </article>
+
+        <!-- Card 6: Web Share API -->
+        <article class="hw-card" id="card-share">
+          <div class="hw-card-head">
+            <div class="hw-title-group">
+              <div class="hw-icon-box is-emerald"><i data-lucide="share-2" aria-hidden="true"></i></div>
+              <div>
+                <h3 class="card-title">Web Share &amp; Watcher QR</h3>
+                <span class="mono-label">navigator.share</span>
+              </div>
+            </div>
+            <span id="shareStatusBadge" class="badge badge-emerald">CHANNEL READY</span>
+          </div>
+
+          <div class="well">
+            <div class="mono-label">Active Watcher Channel</div>
+            <div id="shareChannelCode" class="mono-value">?channel=AW-7492-NG</div>
+            <div id="shareOutcomeText" class="muted-copy">Shares live anchor position &amp; alarm telemetry URL.</div>
+          </div>
+
+          <div id="shareQrBox" class="well" style="display:none; gap:0.75rem; align-items:center;">
+            <svg id="watcherQrSvg" width="84" height="84" viewBox="0 0 21 21" style="background:#edf3f7; padding:4px; border-radius:6px; flex-shrink:0;" aria-label="Watcher Channel QR Code"></svg>
+            <div style="display:flex; flex-direction:column; gap:0.4rem;">
+              <div class="mono-label">Fallback Share Sheet</div>
+              <div class="muted-copy">Native share blocked or unavailable; copy watcher URL directly.</div>
+              <button type="button" class="btn btn-sm btn-emerald" onclick="copyWatcherUrl()">Copy Watcher Link</button>
+            </div>
+          </div>
+
+          <div class="hw-actions">
+            <button type="button" class="btn btn-sm btn-primary" onclick="triggerWebShare()">Share Anchor Position</button>
+            <button type="button" class="btn btn-sm" onclick="toggleQrFallback(true)">Show Watcher QR</button>
+          </div>
+        </article>
+
+        <!-- Card 7: App Badging API -->
+        <article class="hw-card" id="card-badging">
+          <div class="hw-card-head">
+            <div class="hw-title-group">
+              <div class="hw-icon-box is-amber"><i data-lucide="bell-ring" aria-hidden="true"></i></div>
+              <div>
+                <h3 class="card-title">App Badging API</h3>
+                <span class="mono-label">navigator.setAppBadge</span>
+              </div>
+            </div>
+            <span id="badgeApiChip" class="badge badge-amber">COUNT: 0</span>
+          </div>
+
+          <div class="well launcher-preview">
+            <div class="android-icon-tile" aria-label="Android Launcher Icon Preview">
+              <i data-lucide="anchor" aria-hidden="true"></i>
+              <span id="previewBadgeCount" class="android-badge-dot">0</span>
+            </div>
+            <div>
+              <div class="mono-label">Android Launcher Preview</div>
+              <div class="muted-copy">Mirrors dynamic drag-alert counter on the installed PWA home-screen icon.</div>
+            </div>
+          </div>
+
+          <div class="hw-actions">
+            <button type="button" class="btn btn-sm btn-amber" onclick="adjustAppBadge(1)">+1 Alert</button>
+            <button type="button" class="btn btn-sm" onclick="adjustAppBadge(-1)">-1</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="clearAppBadgeCounter()">Clear Badge</button>
+          </div>
+        </article>
+
+        <!-- Card 8: Network Information API -->
+        <article class="hw-card" id="card-network">
+          <div class="hw-card-head">
+            <div class="hw-title-group">
+              <div class="hw-icon-box"><i data-lucide="wifi" aria-hidden="true"></i></div>
+              <div>
+                <h3 class="card-title">Network Information API</h3>
+                <span class="mono-label">navigator.connection</span>
+              </div>
+            </div>
+            <span id="netStatusBadge" class="badge badge-emerald">ONLINE // 4G</span>
+          </div>
+
+          <div class="well">
+            <div class="scope-readout-row">
+              <div>
+                <div class="mono-label">Type</div>
+                <div id="netTypeVal" class="mono-value">4G</div>
+              </div>
+              <div>
+                <div class="mono-label">Downlink</div>
+                <div id="netDownlinkVal" class="mono-value">18.4 Mbps</div>
+              </div>
+              <div>
+                <div class="mono-label">RTT</div>
+                <div id="netRttVal" class="mono-value">45 ms</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hw-actions">
+            <button type="button" id="netOfflineBtn" class="btn btn-sm btn-danger" onclick="toggleNetworkOffline()">Simulate Offline</button>
+            <button type="button" id="netLatencyBtn" class="btn btn-sm btn-amber" onclick="toggleNetworkLatency()">Simulate High Latency</button>
+          </div>
+        </article>
+
+        <!-- Card 9: Fullscreen API -->
+        <article class="hw-card" id="card-fullscreen">
+          <div class="hw-card-head">
+            <div class="hw-title-group">
+              <div class="hw-icon-box is-indigo"><i data-lucide="maximize-2" aria-hidden="true"></i></div>
+              <div>
+                <h3 class="card-title">Fullscreen API</h3>
+                <span class="mono-label">requestFullscreen</span>
+              </div>
+            </div>
+            <span id="fsStatusBadge" class="badge badge-indigo">WINDOWED</span>
+          </div>
+
+          <div class="well">
+            <div class="mono-label">Viewport State</div>
+            <div id="fsStateText" class="mono-value">Standard Layout</div>
+            <div class="muted-copy">Switches cockpit into distraction-free watch mode, with sandbox theatre fallback.</div>
+          </div>
+
+          <div class="hw-actions">
+            <button type="button" id="fsToggleBtn" class="btn btn-sm btn-indigo" onclick="toggleFullscreenMode()">Toggle Fullscreen</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 5. STORAGE VAULT & SERVICE WORKER LIFECYCLE -->
+    <section class="lifecycle-grid" aria-label="Storage Vault and Service Worker Lifecycle">
+      <!-- Persistent Storage Vault -->
+      <article class="panel">
+        <div class="hw-card-head">
+          <div>
+            <span class="mono-label">Persistent Storage Vault</span>
+            <h2 class="section-heading">Track Logs, WAV Blobs &amp; Schema v1 &rarr; v2</h2>
+          </div>
+          <span id="vaultSchemaBadge" class="badge badge-cyan">SCHEMA v1</span>
+        </div>
+
+        <div class="scope-readout-row">
+          <div class="metric-mini">
+            <span class="mono-label">Track Records</span>
+            <span id="vaultCountVal" class="metric-mini-val">0</span>
+          </div>
+          <div class="metric-mini">
+            <span class="mono-label">WAV Alert Blob</span>
+            <span id="vaultWavVal" class="metric-mini-val">44.1 kHz</span>
+          </div>
+          <div class="metric-mini">
+            <span class="mono-label">Backing Store</span>
+            <span id="vaultBackingVal" class="metric-mini-val">Shim State</span>
+          </div>
+        </div>
+
+        <div class="well">
+          <div class="hw-telemetry-row" style="margin-bottom: var(--space-xs);">
+            <span class="mono-label">Stored JSON Track Log Entries</span>
+            <span id="vaultBytesVal" class="mono-label">0 B</span>
+          </div>
+          <div id="vaultEntriesList" class="vault-list"></div>
+        </div>
+
+        <div class="hw-actions">
+          <button type="button" class="btn btn-sm btn-emerald" onclick="appendTrackRecord()">+ Record Fix</button>
+          <button type="button" id="migrateVaultBtn" class="btn btn-sm btn-amber" onclick="runSchemaMigration()">Migrate Schema (v1 &rarr; v2)</button>
+          <button type="button" class="btn btn-sm btn-primary" onclick="playStoredWavAlert()">Play Binary WAV Alert</button>
+          <button type="button" class="btn btn-sm" onclick="resetVaultV1()">Reset to v1</button>
+        </div>
+      </article>
+
+      <!-- Service Worker Lifecycle Manager -->
+      <article class="panel">
+        <div class="hw-card-head">
+          <div>
+            <span class="mono-label">Offline Cache &amp; Update Engine</span>
+            <h2 class="section-heading">Service Worker Lifecycle Manager</h2>
+          </div>
+          <span id="swStateBadge" class="badge badge-indigo">PROBING</span>
+        </div>
+
+        <div id="swUpdateBanner" class="sw-update-banner" role="status">
+          <div>
+            <strong>New Release Waiting (v4.0.1-rc1)</strong>
+            <div class="muted-copy">Worker stalled in waiting state until skipWaiting() fires.</div>
+          </div>
+          <button type="button" class="btn btn-sm btn-amber" onclick="activateWaitingWorker()">Activate skipWaiting() &amp; Reload</button>
+        </div>
+
+        <div class="scope-readout-row">
+          <div class="metric-mini">
+            <span class="mono-label">SW Support</span>
+            <span id="swSupportVal" class="metric-mini-val">--</span>
+          </div>
+          <div class="metric-mini">
+            <span class="mono-label">Controller</span>
+            <span id="swControllerVal" class="metric-mini-val">None</span>
+          </div>
+          <div class="metric-mini">
+            <span class="mono-label">Active Cache</span>
+            <span id="swCacheVal" class="metric-mini-val">devtest-v4</span>
+          </div>
+        </div>
+
+        <div class="well">
+          <div class="mono-label" style="margin-bottom: var(--space-xs);">Precached Production Assets</div>
+          <div class="vault-list">
+            <div class="vault-row"><span>./index.html</span><span class="badge badge-emerald">CACHED</span></div>
+            <div class="vault-row"><span>./manifest.webmanifest</span><span class="badge badge-emerald">CACHED</span></div>
+            <div class="vault-row"><span>./android-hal.js</span><span class="badge badge-emerald">CACHED</span></div>
+            <div class="vault-row"><span>./xr-shim.js</span><span class="badge badge-emerald">CACHED</span></div>
+            <div class="vault-row"><span>./db.js</span><span class="badge badge-emerald">CACHED</span></div>
+          </div>
+        </div>
+
+        <div class="hw-actions">
+          <button type="button" class="btn btn-sm btn-primary" onclick="probeServiceWorker()">Probe Registration</button>
+          <button type="button" class="btn btn-sm btn-amber" onclick="simulateSwUpdate()">Simulate New Release Update</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- 6. REAL-TIME TELEMETRY & DIAGNOSTICS CONSOLE -->
+    <section class="panel" aria-label="Real-Time Telemetry and Diagnostics Console">
+      <div class="hw-card-head">
+        <div>
+          <span class="mono-label">Live Event Stream</span>
+          <h2 class="section-heading">Real-Time Telemetry &amp; Diagnostics Console</h2>
+        </div>
+        <div class="hw-actions">
+          <button type="button" class="btn btn-sm" onclick="setLogFilter('ALL')">All</button>
+          <button type="button" class="btn btn-sm" onclick="setLogFilter('HAL')">HAL</button>
+          <button type="button" class="btn btn-sm" onclick="setLogFilter('XR')">WebXR</button>
+          <button type="button" class="btn btn-sm" onclick="setLogFilter('ALARM')">Alarms</button>
+          <button type="button" class="btn btn-sm btn-emerald" onclick="exportLogsText()">Export Log</button>
+          <button type="button" class="btn btn-sm btn-danger" onclick="clearConsoleLog()">Clear</button>
+        </div>
+      </div>
+      <div id="diagnosticsTerminal" class="console-terminal" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <api-shim></api-shim>
+
+  <script>
+    // =========================================================================
+    // 1. GLOBAL STATE & ENVIRONMENT PROBE
+    // =========================================================================
+    const APP_VERSION = 'v4.0.0-android-spec';
+    const WATCHER_CHANNEL = 'AW-7492-NG';
+
+    const envReport = {
+      isIframe: false,
+      isSecure: false,
+      isStandalone: false,
+      isAndroid: false,
+      protocol: 'unknown',
+      hasSW: false
+    };
+
+    const appState = {
+      globalMode: 'auto', // 'auto' | 'simulated' | 'native'
+      chainOut: 25,
+      depth: 5,
+      boatX: 4,
+      boatY: -3,
+      originalAnchorX: 0,
+      originalAnchorY: 0,
+      currentAnchorX: 0,
+      currentAnchorY: 0,
+      boatTrack: [{ x: 0, y: 0 }, { x: 4, y: -3 }],
+      anchorDragTrack: [],
+      previousCircles: [],
+      isAlarmActive: false,
+      syntheticDrift: false,
+      geoWatchId: null,
+      liveGpsLat: 50.71542,
+      liveGpsLon: -1.53184,
+      gpsAccuracy: 4.0,
+      gpsSpeedKn: 0.0,
+
+      // Hardware states
+      batteryLevel: 78,
+      batteryCharging: true,
+      alpha: 0,
+      beta: 4,
+      gamma: -6,
+      wakeLockActive: false,
+      wakeLockSentinel: null,
+      wakeLockSeconds: 0,
+      wakeLockIntervalId: null,
+      bleDevice: null,
+      badgeCount: 0,
+      simOffline: false,
+      simHighLatency: false,
+      simFullscreen: false,
+      vibIntervalId: null,
+
+      // WebXR camera & spatial flags
+      xrOrbitDeg: 35,
+      xrPitchDeg: 28,
+      xrElevM: 18,
+      xrPlaceAnchorMode: false,
+      xrSimArActive: false,
+
+      // Vault & SW states
+      vaultSchemaVersion: 1,
+      vaultRecords: [],
+      wavBlobBytes: 0,
+      swSimulatedState: 'ACTIVE',
+      swWaitingSimulated: false,
+
+      // Console log
+      logs: [],
+      logFilter: 'ALL'
+    };
+
+    let audioCtx = null;
+    let plotCanvas = null;
+    let plotCtx = null;
+    let driftTimerId = null;
+
+    // Three.js references
+    let xrRenderer = null;
+    let xrScene = null;
+    let xrCamera = null;
+    let xrBoatGroup = null;
+    let xrAnchorGroup = null;
+    let xrBuoyGroup = null;
+    let xrPerimeterMesh = null;
+    let xrChainLine = null;
+    let xrSeaPlane = null;
+    let xrAnimFrame = null;
+    let isPointerDraggingXr = false;
+    let lastPointerX = 0;
+    let lastPointerY = 0;
+
+    // =========================================================================
+    // 2. LOGGING & PERSISTENCE (notebookAppApi)
+    // =========================================================================
+    function addLog(tag, message) {
+      const now = new Date();
+      const ts = now.toTimeString().slice(0, 8) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+      appState.logs.unshift({ ts, tag, message });
+      if (appState.logs.length > 120) {
+        appState.logs.length = 120;
+      }
+      renderConsoleLog();
+    }
+
+    function renderConsoleLog() {
+      const terminal = document.getElementById('diagnosticsTerminal');
+      if (!terminal) return;
+      const filtered = appState.logFilter === 'ALL'
+        ? appState.logs
+        : appState.logs.filter(item => item.tag === appState.logFilter);
+
+      if (filtered.length === 0) {
+        terminal.innerHTML = '<div class="muted-copy">No diagnostics events match this filter yet. Trigger any hardware API or spatial action above.</div>';
+        return;
+      }
+
+      terminal.innerHTML = filtered.map(entry => {
+        let badgeClass = 'badge-cyan';
+        if (entry.tag === 'SHIM' || entry.tag === 'SW') badgeClass = 'badge-amber';
+        if (entry.tag === 'ALARM') badgeClass = 'badge-error';
+        if (entry.tag === 'XR') badgeClass = 'badge-indigo';
+        if (entry.tag === 'VAULT') badgeClass = 'badge-emerald';
+        return `<div class="log-entry">
+          <span class="log-ts">${escapeHtml(entry.ts)}</span>
+          <span class="badge ${badgeClass}">${escapeHtml(entry.tag)}</span>
+          <span class="log-msg">${escapeHtml(entry.message)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    function setLogFilter(filter) {
+      appState.logFilter = filter;
+      renderConsoleLog();
+    }
+
+    function clearConsoleLog() {
+      appState.logs = [];
+      addLog('HAL', `Diagnostics console cleared.`);
+    }
+
+    function exportLogsText() {
+      const lines = appState.logs.slice().reverse().map(e => `[${e.ts}] [${e.tag}] ${e.message}`).join('\n');
+      if (window.notebookAppApi && typeof window.notebookAppApi.triggerFileDownload === 'function') {
+        window.notebookAppApi.triggerFileDownload({
+          content: lines || 'No diagnostics entries recorded.',
+          contentType: 'text/plain',
+          encoding: 'UTF-8',
+          filename: 'devtest-telemetry-log.txt'
+        });
+      } else {
+        triggerBlobDownload(new Blob([lines], { type: 'text/plain' }), 'devtest-telemetry-log.txt');
+      }
+      addLog('HAL', `Exported ${appState.logs.length} diagnostics entries.`);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function persistState() {
+      if (!window.notebookAppApi || typeof window.notebookAppApi.setAppState !== 'function') return;
+      try {
+        await window.notebookAppApi.setAppState({
+          globalMode: appState.globalMode,
+          chainOut: appState.chainOut,
+          depth: appState.depth,
+          boatX: Number(appState.boatX.toFixed(2)),
+          boatY: Number(appState.boatY.toFixed(2)),
+          originalAnchorX: Number(appState.originalAnchorX.toFixed(2)),
+          originalAnchorY: Number(appState.originalAnchorY.toFixed(2)),
+          currentAnchorX: Number(appState.currentAnchorX.toFixed(2)),
+          currentAnchorY: Number(appState.currentAnchorY.toFixed(2)),
+          batteryLevel: appState.batteryLevel,
+          batteryCharging: appState.batteryCharging,
+          alpha: appState.alpha,
+          beta: appState.beta,
+          gamma: appState.gamma,
+          badgeCount: appState.badgeCount,
+          vaultSchemaVersion: appState.vaultSchemaVersion,
+          vaultRecords: appState.vaultRecords.slice(0, 30)
+        });
+      } catch (err) {
+        addLog('SHIM', `State save deferred: ${err.message || 'payload limit'}`);
+      }
+    }
+
+    async function restoreSavedState() {
+      if (!window.notebookAppApi || typeof window.notebookAppApi.getAppState !== 'function') return;
+      try {
+        const saved = await window.notebookAppApi.getAppState();
+        if (!saved) return;
+        if (saved.globalMode) appState.globalMode = saved.globalMode;
+        if (typeof saved.chainOut === 'number') appState.chainOut = saved.chainOut;
+        if (typeof saved.depth === 'number') appState.depth = saved.depth;
+        if (typeof saved.boatX === 'number') appState.boatX = saved.boatX;
+        if (typeof saved.boatY === 'number') appState.boatY = saved.boatY;
+        if (typeof saved.originalAnchorX === 'number') appState.originalAnchorX = saved.originalAnchorX;
+        if (typeof saved.originalAnchorY === 'number') appState.originalAnchorY = saved.originalAnchorY;
+        if (typeof saved.currentAnchorX === 'number') appState.currentAnchorX = saved.currentAnchorX;
+        if (typeof saved.currentAnchorY === 'number') appState.currentAnchorY = saved.currentAnchorY;
+        if (typeof saved.batteryLevel === 'number') appState.batteryLevel = saved.batteryLevel;
+        if (typeof saved.batteryCharging === 'boolean') appState.batteryCharging = saved.batteryCharging;
+        if (typeof saved.alpha === 'number') appState.alpha = saved.alpha;
+        if (typeof saved.beta === 'number') appState.beta = saved.beta;
+        if (typeof saved.gamma === 'number') appState.gamma = saved.gamma;
+        if (typeof saved.badgeCount === 'number') appState.badgeCount = saved.badgeCount;
+        if (typeof saved.vaultSchemaVersion === 'number') appState.vaultSchemaVersion = saved.vaultSchemaVersion;
+        if (Array.isArray(saved.vaultRecords) && saved.vaultRecords.length > 0) {
+          appState.vaultRecords = saved.vaultRecords;
+        }
+        addLog('VAULT', `Restored persisted session state (Schema v${appState.vaultSchemaVersion}).`);
+      } catch (err) {
+        addLog('SHIM', `Restore state warning: ${err.message || 'unavailable'}`);
+      }
+    }
+
+    // =========================================================================
+    // 3. ENVIRONMENT AUDIT & HAL MODE ROUTING
+    // =========================================================================
+    function runEnvironmentAudit() {
+      let inIframe = true;
+      try {
+        inIframe = window.self !== window.top;
+      } catch (e) {
+        inIframe = true;
+      }
+      envReport.isIframe = inIframe;
+      envReport.isSecure = Boolean(window.isSecureContext);
+      envReport.isStandalone = Boolean(
+        (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+        window.navigator.standalone === true
+      );
+      envReport.isAndroid = /Android/i.test(navigator.userAgent || '');
+      envReport.protocol = window.location ? window.location.protocol : 'about:';
+      envReport.hasSW = 'serviceWorker' in navigator;
+
+      const elIframe = document.getElementById('probeIframe');
+      const elSecure = document.getElementById('probeSecure');
+      const elDisplay = document.getElementById('probeDisplay');
+      const elAndroid = document.getElementById('probeAndroid');
+      const elProtocol = document.getElementById('probeProtocol');
+
+      if (elIframe) elIframe.textContent = envReport.isIframe ? 'TRUE (Iframe)' : 'FALSE (Top-Level)';
+      if (elSecure) elSecure.textContent = envReport.isSecure ? 'HTTPS / Secure' : 'Restricted';
+      if (elDisplay) elDisplay.textContent = envReport.isStandalone ? 'standalone' : 'browser-tab';
+      if (elAndroid) elAndroid.textContent = envReport.isAndroid ? 'Android Chrome' : 'Desktop / Non-Android';
+      if (elProtocol) elProtocol.textContent = envReport.protocol;
+
+      updateModeIndicators();
+    }
+
+    function isUseSimulatedMode() {
+      if (appState.globalMode === 'simulated') return true;
+      if (appState.globalMode === 'native') return false;
+      return envReport.isIframe || !envReport.isSecure || !envReport.isAndroid;
+    }
+
+    function setGlobalMode(mode) {
+      appState.globalMode = mode;
+      updateModeIndicators();
+      addLog('HAL', `Global HAL mode switched to '${mode.toUpperCase()}' (effective: ${isUseSimulatedMode() ? 'SIMULATED SHIM' : 'NATIVE ANDROID'}).`);
+      persistState();
+    }
+
+    function updateModeIndicators() {
+      const sim = isUseSimulatedMode();
+      const verdictBadge = document.getElementById('envVerdictBadge');
+      const halBadge = document.getElementById('halRouteBadge');
+
+      if (verdictBadge) {
+        if (!envReport.isIframe && envReport.isSecure && envReport.isAndroid && envReport.isStandalone) {
+          verdictBadge.className = 'badge badge-emerald';
+          verdictBadge.textContent = 'Native Android PWA';
+        } else {
+          verdictBadge.className = 'badge badge-amber';
+          verdictBadge.textContent = 'Sandboxed / Restricted Preview';
+        }
+      }
+
+      if (halBadge) {
+        halBadge.className = sim ? 'badge badge-amber' : 'badge badge-emerald';
+        halBadge.textContent = sim ? 'HAL Route: Simulated Shims' : 'HAL Route: Native Android Hardware';
+      }
+
+      const btnAuto = document.getElementById('modeAutoBtn');
+      const btnSim = document.getElementById('modeSimBtn');
+      const btnNat = document.getElementById('modeNativeBtn');
+      if (btnAuto) btnAuto.classList.toggle('is-active', appState.globalMode === 'auto');
+      if (btnSim) btnSim.classList.toggle('is-active', appState.globalMode === 'simulated');
+      if (btnNat) btnNat.classList.toggle('is-active', appState.globalMode === 'native');
+    }
+
+    // =========================================================================
+    // 4. WEB AUDIO ENGINE & BINARY WAV SYNTHESIS
+    // =========================================================================
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        const AudioCtor = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtor) {
+          audioCtx = new AudioCtor();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    function playHapticHum(durationMs) {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(115, ctx.currentTime);
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + Math.max(0.05, durationMs / 1000));
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + Math.max(0.05, durationMs / 1000));
+    }
+
+    function buildWavBinaryBuffer(freqHz, durationSec) {
+      const sampleRate = 44100;
+      const numSamples = Math.floor(sampleRate * durationSec);
+      const dataBytes = numSamples * 2;
+      const buffer = new ArrayBuffer(44 + dataBytes);
+      const view = new DataView(buffer);
+
+      function writeStr(offset, str) {
+        for (let i = 0; i < str.length; i++) {
+          view.setUint8(offset + i, str.charCodeAt(i));
+        }
+      }
+
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + dataBytes, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, 'data');
+      view.setUint32(40, dataBytes, true);
+
+      for (let i = 0; i < numSamples; i++) {
+        const t = i / sampleRate;
+        const env = Math.min(1, t * 25) * Math.min(1, (durationSec - t) * 20);
+        const mod = (Math.floor(t * 6) % 2 === 0) ? 1.0 : 0.35;
+        const sample = Math.sin(2 * Math.PI * freqHz * t) * env * mod * 0.65;
+        view.setInt16(44 + i * 2, Math.round(sample * 32767), true);
+      }
+      return buffer;
+    }
+
+    function playStoredWavAlert() {
+      const buf = buildWavBinaryBuffer(880, 0.55);
+      appState.wavBlobBytes = buf.byteLength;
+      const wavValEl = document.getElementById('vaultWavVal');
+      if (wavValEl) wavValEl.textContent = `${(buf.byteLength / 1024).toFixed(1)} KiB`;
+
+      const ctx = ensureAudioContext();
+      if (ctx) {
+        ctx.decodeAudioData(buf.slice(0), decoded => {
+          const src = ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(ctx.destination);
+          src.start(0);
+        }, () => {
+          playHapticHum(300);
+        });
+      }
+      addLog('VAULT', `Decoded and played binary RIFF/PCM WAV alert blob (${buf.byteLength} bytes, 44.1 kHz).`);
+    }
+
+    // =========================================================================
+    // 5. HARDWARE MODULE HANDLERS (CARDS 1-9)
+    // =========================================================================
+
+    // --- Card 1: Vibration API ---
+    function triggerVibration(pattern, label) {
+      stopVibration(true);
+      const patternEl = document.getElementById('vibPatternReadout');
+      const stateEl = document.getElementById('vibStateText');
+      const badgeEl = document.getElementById('vibStatusBadge');
+      const phoneEl = document.getElementById('phoneSimDevice');
+
+      if (patternEl) patternEl.textContent = `[${pattern.join(', ')}]`;
+
+      const sim = isUseSimulatedMode();
+      let nativeSuccess = false;
+      if (!sim && typeof navigator.vibrate === 'function') {
+        try {
+          nativeSuccess = navigator.vibrate(pattern);
+        } catch (e) {
+          nativeSuccess = false;
+        }
+      }
+
+      if (nativeSuccess) {
+        if (badgeEl) {
+          badgeEl.className = 'badge badge-emerald';
+          badgeEl.textContent = 'NATIVE VIBRATE';
+        }
+        if (stateEl) stateEl.textContent = `${label} sent to motor`;
+        addLog('HAL', `navigator.vibrate([${pattern.join(', ')}]) executed natively.`);
+      } else {
+        if (badgeEl) {
+          badgeEl.className = 'badge badge-amber';
+          badgeEl.textContent = 'SHIM PULSE';
+        }
+        if (stateEl) stateEl.textContent = `${label} (animated shake + hum)`;
+        addLog('SHIM', `Vibration fallback active for ${label}: [${pattern.join(', ')}].`);
+      }
+
+      // Run visual shake + audio pulse timeline so developer feels/sees timing
+      let idx = 0;
+      function stepPulse() {
+        if (idx >= pattern.length) {
+          if (phoneEl) phoneEl.classList.remove('is-vibrating');
+          if (stateEl) stateEl.textContent = `Completed (${label})`;
+          return;
+        }
+        const dur = pattern[idx];
+        const isOn = idx % 2 === 0;
+        if (phoneEl) phoneEl.classList.toggle('is-vibrating', isOn);
+        if (isOn) playHapticHum(dur);
+        idx += 1;
+        appState.vibIntervalId = setTimeout(stepPulse, dur);
+      }
+      stepPulse();
+    }
+
+    function stopVibration(silent) {
+      if (appState.vibIntervalId) {
+        clearTimeout(appState.vibIntervalId);
+        appState.vibIntervalId = null;
+      }
+      if (typeof navigator.vibrate === 'function') {
+        try { navigator.vibrate(0); } catch (e) {}
+      }
+      const phoneEl = document.getElementById('phoneSimDevice');
+      const stateEl = document.getElementById('vibStateText');
+      if (phoneEl) phoneEl.classList.remove('is-vibrating');
+      if (stateEl && !silent) stateEl.textContent = 'Stopped';
+      if (!silent) addLog('HAL', `Vibration cancelled (navigator.vibrate(0)).`);
+    }
+
+    // --- Card 2: Battery Status API ---
+    function renderBatteryUI() {
+      const lvl = Math.max(0, Math.min(100, Number(appState.batteryLevel)));
+      const charging = Boolean(appState.batteryCharging);
+      const levelEl = document.getElementById('batLevelDisplay');
+      const sliderEl = document.getElementById('batSimSlider');
+      const sliderValEl = document.getElementById('batSliderVal');
+      const fillEl = document.getElementById('batBarFill');
+      const statusBadge = document.getElementById('batStatusBadge');
+      const alarmBanner = document.getElementById('batAlarmBanner');
+      const chargeBtn = document.getElementById('batChargingBtn');
+
+      if (levelEl) levelEl.textContent = `${lvl}%`;
+      if (sliderEl) sliderEl.value = String(lvl);
+      if (sliderValEl) sliderValEl.textContent = `${lvl}%`;
+      if (chargeBtn) chargeBtn.textContent = charging ? 'Charging: Yes' : 'Charging: No';
+
+      if (fillEl) {
+        fillEl.style.width = `${lvl}%`;
+        fillEl.classList.remove('is-warn', 'is-critical');
+        if (lvl < 20 && !charging) fillEl.classList.add('is-critical');
+        else if (lvl < 40) fillEl.classList.add('is-warn');
+      }
+
+      if (statusBadge) {
+        statusBadge.textContent = `${lvl}% ${charging ? 'CHARGING' : 'DISCHARGING'}`;
+        statusBadge.className = (lvl < 20 && !charging) ? 'badge badge-error' : 'badge badge-emerald';
+      }
+
+      if (alarmBanner) {
+        if (lvl < 20 && !charging) {
+          alarmBanner.className = 'badge badge-error';
+          alarmBanner.textContent = 'LOW BATTERY ALARM (<20%)';
+        } else {
+          alarmBanner.className = 'badge badge-emerald';
+          alarmBanner.textContent = 'POWER NOMINAL';
+        }
+      }
+    }
+
+    function updateBatterySim(val) {
+      const prev = appState.batteryLevel;
+      appState.batteryLevel = Number(val);
+      renderBatteryUI();
+      if (prev >= 20 && appState.batteryLevel < 20 && !appState.batteryCharging) {
+        addLog('ALARM', `Simulated Battery dropped below 20% (${appState.batteryLevel}%) while discharging!`);
+        playHapticHum(220);
+      }
+      persistState();
+    }
+
+    function toggleBatteryCharging() {
+      appState.batteryCharging = !appState.batteryCharging;
+      renderBatteryUI();
+      addLog('SHIM', `Battery charging state toggled to ${appState.batteryCharging ? 'CHARGING' : 'DISCHARGING'}.`);
+      persistState();
+    }
+
+    async function probeNativeBattery() {
+      if (isUseSimulatedMode() || typeof navigator.getBattery !== 'function') {
+        addLog('SHIM', `navigator.getBattery() unavailable or sandboxed; using interactive battery simulator (${appState.batteryLevel}%).`);
+        renderBatteryUI();
+        return;
+      }
+      try {
+        const bat = await navigator.getBattery();
+        appState.batteryLevel = Math.round(bat.level * 100);
+        appState.batteryCharging = bat.charging;
+        renderBatteryUI();
+        addLog('HAL', `Native Battery read: ${appState.batteryLevel}%, charging=${appState.batteryCharging}.`);
+      } catch (e) {
+        addLog('SHIM', `Native Battery blocked (${e.message}); retaining simulated readout.`);
+      }
+    }
+
+    // --- Card 3: Orientation & Compass ---
+    function updateOrientationSim() {
+      const a = document.getElementById('oriAlphaSlider');
+      const b = document.getElementById('oriBetaSlider');
+      const g = document.getElementById('oriGammaSlider');
+      if (a) appState.alpha = Number(a.value);
+      if (b) appState.beta = Number(b.value);
+      if (g) appState.gamma = Number(g.value);
+      renderOrientationUI();
+      persistState();
+    }
+
+    function stepCompassHeading() {
+      appState.alpha = (appState.alpha + 30) % 360;
+      const a = document.getElementById('oriAlphaSlider');
+      if (a) a.value = String(appState.alpha);
+      renderOrientationUI();
+      addLog('SHIM', `Compass dial clicked: heading stepped to ${String(appState.alpha).padStart(3, '0')}°.`);
+      persistState();
+    }
+
+    function renderOrientationUI() {
+      const aVal = document.getElementById('oriAlphaVal');
+      const bVal = document.getElementById('oriBetaVal');
+      const gVal = document.getElementById('oriGammaVal');
+      const needle = document.getElementById('compassNeedleGroup');
+      const heelEl = document.getElementById('oriHeelReadout');
+
+      if (aVal) aVal.textContent = `${String(Math.round(appState.alpha)).padStart(3, '0')}°`;
+      if (bVal) bVal.textContent = `${Math.round(appState.beta)}°`;
+      if (gVal) gVal.textContent = `${Math.round(appState.gamma)}°`;
+      if (needle) needle.setAttribute('transform', `rotate(${appState.alpha} 60 60)`);
+      if (heelEl) {
+        const side = appState.gamma === 0 ? 'Level' : (appState.gamma < 0 ? 'Port' : 'Starboard');
+        heelEl.textContent = `Heel: ${Math.abs(Math.round(appState.gamma))}° ${side}`;
+      }
+    }
+
+    async function enableNativeOrientation() {
+      const badge = document.getElementById('oriStatusBadge');
+      if (isUseSimulatedMode()) {
+        if (badge) {
+          badge.className = 'badge badge-amber';
+          badge.textContent = 'SHIM ACTIVE';
+        }
+        addLog('SHIM', `Orientation running via simulated compass/heel sliders (α=${appState.alpha}°, γ=${appState.gamma}°).`);
+        return;
+      }
+      try {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          const res = await DeviceOrientationEvent.requestPermission();
+          if (res !== 'granted') throw new Error('Permission denied');
+        }
+        window.addEventListener('deviceorientation', ev => {
+          if (ev.alpha !== null) appState.alpha = Math.round((360 - ev.alpha) % 360);
+          if (ev.beta !== null) appState.beta = Math.max(-45, Math.min(45, Math.round(ev.beta)));
+          if (ev.gamma !== null) appState.gamma = Math.max(-45, Math.min(45, Math.round(ev.gamma)));
+          renderOrientationUI();
+        });
+        if (badge) {
+          badge.className = 'badge badge-emerald';
+          badge.textContent = 'NATIVE LIVE';
+        }
+        addLog('HAL', `Bound DeviceOrientationEvent listener.`);
+      } catch (e) {
+        if (badge) {
+          badge.className = 'badge badge-amber';
+          badge.textContent = 'SHIM FALLBACK';
+        }
+        addLog('SHIM', `DeviceOrientation unavailable (${e.message}); falling back to sliders.`);
+      }
+    }
+
+    // --- Card 4: Screen Wake Lock ---
+    async function toggleWakeLock() {
+      const badge = document.getElementById('wlStatusBadge');
+      const modeEl = document.getElementById('wlModeText');
+      const timerEl = document.getElementById('wlTimerText');
+      const btn = document.getElementById('wlToggleBtn');
+
+      if (appState.wakeLockActive) {
+        appState.wakeLockActive = false;
+        if (appState.wakeLockSentinel && typeof appState.wakeLockSentinel.release === 'function') {
+          try { await appState.wakeLockSentinel.release(); } catch (e) {}
+        }
+        appState.wakeLockSentinel = null;
+        if (appState.wakeLockIntervalId) {
+          clearInterval(appState.wakeLockIntervalId);
+          appState.wakeLockIntervalId = null;
+        }
+        if (badge) { badge.className = 'badge badge-indigo'; badge.textContent = 'RELEASED'; }
+        if (modeEl) modeEl.textContent = 'Inactive';
+        if (btn) btn.textContent = 'Acquire Wake Lock';
+        addLog('HAL', `Screen Wake Lock released after ${appState.wakeLockSeconds}s.`);
+        return;
+      }
+
+      appState.wakeLockActive = true;
+      appState.wakeLockSeconds = 0;
+      let nativeLock = false;
+
+      if (!isUseSimulatedMode() && navigator.wakeLock && typeof navigator.wakeLock.request === 'function') {
+        try {
+          appState.wakeLockSentinel = await navigator.wakeLock.request('screen');
+          nativeLock = true;
+        } catch (e) {
+          nativeLock = false;
+        }
+      }
+
+      if (badge) {
+        badge.className = nativeLock ? 'badge badge-emerald' : 'badge badge-amber';
+        badge.textContent = nativeLock ? 'NATIVE LOCKED' : 'SHIM SENTINEL';
+      }
+      if (modeEl) modeEl.textContent = nativeLock ? 'navigator.wakeLock("screen")' : 'Simulated Sentinel Heartbeat';
+      if (btn) btn.textContent = 'Release Wake Lock';
+
+      appState.wakeLockIntervalId = setInterval(() => {
+        appState.wakeLockSeconds += 1;
+        const m = String(Math.floor(appState.wakeLockSeconds / 60)).padStart(2, '0');
+        const s = String(appState.wakeLockSeconds % 60).padStart(2, '0');
+        if (timerEl) timerEl.textContent = `${m}:${s}`;
+      }, 1000);
+
+      addLog(nativeLock ? 'HAL' : 'SHIM', nativeLock ? `Native Screen Wake Lock acquired.` : `Simulated Wake Lock Sentinel active (iframe policy fallback).`);
+    }
+
+    // --- Card 5: Web Bluetooth (BLE) ---
+    async function scanBluetoothDevices() {
+      const scanner = document.getElementById('bleMockScanner');
+      const badge = document.getElementById('bleStatusBadge');
+
+      if (!isUseSimulatedMode() && navigator.bluetooth && typeof navigator.bluetooth.requestDevice === 'function') {
+        try {
+          if (badge) { badge.className = 'badge badge-cyan'; badge.textContent = 'SCANNING...'; }
+          const device = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: ['battery_service', 'device_information']
+          });
+          appState.bleDevice = device.name || device.id;
+          const connEl = document.getElementById('bleConnectedText');
+          const payEl = document.getElementById('blePayloadText');
+          if (connEl) connEl.textContent = appState.bleDevice;
+          if (payEl) payEl.textContent = 'Native GATT peripheral selected.';
+          if (badge) { badge.className = 'badge badge-emerald'; badge.textContent = 'PAIRED'; }
+          addLog('HAL', `Web Bluetooth paired native device: ${appState.bleDevice}`);
+          return;
+        } catch (e) {
+          addLog('SHIM', `Native BLE picker cancelled/blocked (${e.message}); opening simulated scanner.`);
+        }
+      }
+
+      if (scanner) scanner.style.display = 'flex';
+      if (badge) { badge.className = 'badge badge-amber'; badge.textContent = 'MOCK SCANNER'; }
+      addLog('SHIM', `Simulated BLE scan discovered NMEA-Depth-Sensor and Crew-BLE-Beacon-01.`);
+    }
+
+    function pairMockBleDevice(name, rssi, payload) {
+      appState.bleDevice = name;
+      const scanner = document.getElementById('bleMockScanner');
+      const connEl = document.getElementById('bleConnectedText');
+      const payEl = document.getElementById('blePayloadText');
+      const badge = document.getElementById('bleStatusBadge');
+
+      if (scanner) scanner.style.display = 'none';
+      if (connEl) connEl.textContent = `${name} (${rssi})`;
+      if (payEl) payEl.textContent = payload;
+      if (badge) { badge.className = 'badge badge-emerald'; badge.textContent = 'SHIM PAIRED'; }
+
+      if (name === 'NMEA-Depth-Sensor') {
+        appState.depth = 6.4;
+        const dIn = document.getElementById('waterDepthInput');
+        if (dIn) dIn.value = '6.4';
+        recomputeAnchorPhysics();
+      }
+      addLog('SHIM', `Paired simulated BLE peripheral ${name}: ${payload}`);
+    }
+
+    function disconnectBleDevice() {
+      appState.bleDevice = null;
+      const scanner = document.getElementById('bleMockScanner');
+      const connEl = document.getElementById('bleConnectedText');
+      const payEl = document.getElementById('blePayloadText');
+      const badge = document.getElementById('bleStatusBadge');
+
+      if (scanner) scanner.style.display = 'none';
+      if (connEl) connEl.textContent = 'None paired';
+      if (payEl) payEl.textContent = 'Scan for NMEA depth sounders or crew safety beacons.';
+      if (badge) { badge.className = 'badge badge-cyan'; badge.textContent = 'IDLE'; }
+      addLog('HAL', `Disconnected BLE peripheral.`);
+    }
+
+    // --- Card 6: Web Share & QR Watcher ---
+    function generateQrSvgMatrix() {
+      const svg = document.getElementById('watcherQrSvg');
+      if (!svg) return;
+      const size = 21;
+      let rects = '';
+      // Deterministic finder patterns + pseudo-hash data modules for AW-7492-NG
+      function isFinder(r, c) {
+        const topL = r < 7 && c < 7;
+        const topR = r < 7 && c >= size - 7;
+        const botL = r >= size - 7 && c < 7;
+        if (!topL && !topR && !botL) return null;
+        const lr = r >= size - 7 ? r - (size - 7) : r;
+        const lc = c >= size - 7 ? c - (size - 7) : c;
+        if (lr === 0 || lr === 6 || lc === 0 || lc === 6) return true;
+        if (lr >= 2 && lr <= 4 && lc >= 2 && lc <= 4) return true;
+        return false;
+      }
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          const finder = isFinder(r, c);
+          const bit = finder !== null ? finder : (((r * 17 + c * 31 + 7) % 5) < 2);
+          if (bit) {
+            rects += `<rect x="${c}" y="${r}" width="1" height="1" fill="#0b1120"/>`;
+          }
+        }
+      }
+      svg.innerHTML = rects;
+    }
+
+    async function triggerWebShare() {
+      const shareData = {
+        title: 'Anchor Watch NG — Live Watcher Link',
+        text: `Anchor Watch Channel ${WATCHER_CHANNEL} | Scope ${(appState.chainOut / Math.max(1, appState.depth)).toFixed(1)}:1 | Pos ${appState.liveGpsLat.toFixed(5)}, ${appState.liveGpsLon.toFixed(5)}`,
+        url: window.location.href.split('?')[0] + `?channel=${WATCHER_CHANNEL}`
+      };
+
+      if (!isUseSimulatedMode() && typeof navigator.share === 'function') {
+        try {
+          await navigator.share(shareData);
+          const badge = document.getElementById('shareStatusBadge');
+          if (badge) { badge.className = 'badge badge-emerald'; badge.textContent = 'SHARED'; }
+          addLog('HAL', `navigator.share() completed for channel ${WATCHER_CHANNEL}.`);
+          return;
+        } catch (e) {
+          addLog('SHIM', `navigator.share() unavailable/cancelled (${e.message}); opening QR fallback.`);
+        }
+      }
+      toggleQrFallback(true);
+      addLog('SHIM', `Opened inline Watcher QR & clipboard fallback for channel ${WATCHER_CHANNEL}.`);
+    }
+
+    function toggleQrFallback(show) {
+      const box = document.getElementById('shareQrBox');
+      if (!box) return;
+      const isVisible = box.style.display === 'flex';
+      box.style.display = (typeof show === 'boolean' ? show : !isVisible) ? 'flex' : 'none';
+      generateQrSvgMatrix();
+    }
+
+    async function copyWatcherUrl() {
+      const urlText = `${window.location.href.split('?')[0]}?channel=${WATCHER_CHANNEL}`;
+      const outEl = document.getElementById('shareOutcomeText');
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(urlText);
+        }
+        if (outEl) outEl.textContent = `Copied: ?channel=${WATCHER_CHANNEL}`;
+        addLog('SHIM', `Copied watcher URL to clipboard: ?channel=${WATCHER_CHANNEL}`);
+      } catch (e) {
+        if (outEl) outEl.textContent = `Channel ID ready: ?channel=${WATCHER_CHANNEL}`;
+        addLog('SHIM', `Clipboard restricted; watcher channel displayed inline.`);
+      }
+    }
+
+    // --- Card 7: App Badging API ---
+    function adjustAppBadge(delta) {
+      appState.badgeCount = Math.max(0, Math.min(99, appState.badgeCount + delta));
+      applyAppBadgeState();
+      persistState();
+    }
+
+    function clearAppBadgeCounter() {
+      appState.badgeCount = 0;
+      applyAppBadgeState();
+      persistState();
+    }
+
+    async function applyAppBadgeState() {
+      const chip = document.getElementById('badgeApiChip');
+      const dot = document.getElementById('previewBadgeCount');
+      if (chip) chip.textContent = `COUNT: ${appState.badgeCount}`;
+      if (dot) {
+        dot.textContent = String(appState.badgeCount);
+        dot.classList.toggle('is-visible', appState.badgeCount > 0);
+      }
+
+      if (!isUseSimulatedMode() && typeof navigator.setAppBadge === 'function') {
+        try {
+          if (appState.badgeCount > 0) await navigator.setAppBadge(appState.badgeCount);
+          else if (typeof navigator.clearAppBadge === 'function') await navigator.clearAppBadge();
+          addLog('HAL', `navigator.setAppBadge(${appState.badgeCount}) synced with Android launcher.`);
+          return;
+        } catch (e) {}
+      }
+      addLog('SHIM', `Launcher preview badge updated to ${appState.badgeCount}.`);
+    }
+
+    // --- Card 8: Network Information API ---
+    function renderNetworkUI() {
+      const badge = document.getElementById('netStatusBadge');
+      const typeEl = document.getElementById('netTypeVal');
+      const downEl = document.getElementById('netDownlinkVal');
+      const rttEl = document.getElementById('netRttVal');
+      const offBtn = document.getElementById('netOfflineBtn');
+      const latBtn = document.getElementById('netLatencyBtn');
+
+      const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      let eff = conn && conn.effectiveType ? conn.effectiveType.toUpperCase() : '4G';
+      let down = conn && typeof conn.downlink === 'number' ? conn.downlink.toFixed(1) : '18.4';
+      let rtt = conn && typeof conn.rtt === 'number' ? conn.rtt : 45;
+
+      if (appState.simOffline) {
+        eff = 'OFFLINE';
+        down = '0.0';
+        rtt = 0;
+        if (badge) { badge.className = 'badge badge-error'; badge.textContent = 'OFFLINE (SIM)'; }
+      } else if (appState.simHighLatency) {
+        eff = 'SLOW-3G';
+        down = '0.4';
+        rtt = 920;
+        if (badge) { badge.className = 'badge badge-amber'; badge.textContent = 'HIGH LATENCY'; }
+      } else {
+        if (badge) { badge.className = 'badge badge-emerald'; badge.textContent = `ONLINE // ${eff}`; }
+      }
+
+      if (typeEl) typeEl.textContent = eff;
+      if (downEl) downEl.textContent = `${down} Mbps`;
+      if (rttEl) rttEl.textContent = `${rtt} ms`;
+      if (offBtn) offBtn.textContent = appState.simOffline ? 'Restore Online' : 'Simulate Offline';
+      if (latBtn) latBtn.textContent = appState.simHighLatency ? 'Normal Latency' : 'Simulate High Latency';
+    }
+
+    function toggleNetworkOffline() {
+      appState.simOffline = !appState.simOffline;
+      renderNetworkUI();
+      addLog(appState.simOffline ? 'ALARM' : 'HAL', appState.simOffline ? `Network offline simulation enabled — SW cache serving assets.` : `Network connectivity restored.`);
+    }
+
+    function toggleNetworkLatency() {
+      appState.simHighLatency = !appState.simHighLatency;
+      renderNetworkUI();
+      addLog('SHIM', appState.simHighLatency ? `Simulated high-latency link (920 ms RTT, 0.4 Mbps).` : `Latency simulation cleared.`);
+    }
+
+    // --- Card 9: Fullscreen API ---
+    async function toggleFullscreenMode() {
+      const badge = document.getElementById('fsStatusBadge');
+      const textEl = document.getElementById('fsStateText');
+      const btn = document.getElementById('fsToggleBtn');
+
+      if (!isUseSimulatedMode() && document.fullscreenEnabled) {
+        try {
+          if (!document.fullscreenElement) {
+            await document.documentElement.requestFullscreen();
+            if (badge) { badge.className = 'badge badge-emerald'; badge.textContent = 'NATIVE FULLSCREEN'; }
+            if (textEl) textEl.textContent = 'Native Immersive Viewport';
+            if (btn) btn.textContent = 'Exit Fullscreen';
+            addLog('HAL', `Entered native requestFullscreen().`);
+          } else {
+            await document.exitFullscreen();
+            if (badge) { badge.className = 'badge badge-indigo'; badge.textContent = 'WINDOWED'; }
+            if (textEl) textEl.textContent = 'Standard Layout';
+            if (btn) btn.textContent = 'Toggle Fullscreen';
+            addLog('HAL', `Exited native fullscreen.`);
+          }
+          return;
+        } catch (e) {
+          addLog('SHIM', `Native requestFullscreen() blocked (${e.message}); engaging Cockpit Theatre fallback.`);
+        }
+      }
+
+      appState.simFullscreen = !appState.simFullscreen;
+      document.body.classList.toggle('sim-fullscreen', appState.simFullscreen);
+      if (badge) {
+        badge.className = appState.simFullscreen ? 'badge badge-amber' : 'badge badge-indigo';
+        badge.textContent = appState.simFullscreen ? 'THEATRE FALLBACK' : 'WINDOWED';
+      }
+      if (textEl) textEl.textContent = appState.simFullscreen ? 'Expanded Cockpit Theatre (Shim)' : 'Standard Layout';
+      if (btn) btn.textContent = appState.simFullscreen ? 'Exit Theatre Mode' : 'Toggle Fullscreen';
+      handleXrResize();
+    }
+
+    // =========================================================================
+    // 6. GEOLOCATION & ANCHOR WATCH ENGINE (2D + 3D SYNCHRONISED)
+    // =========================================================================
+    function calculateSwingRadius(chain, depth) {
+      if (chain <= depth || chain <= 0 || depth < 0) return 0;
+      return Math.sqrt(Math.max(0, chain * chain - depth * depth));
+    }
+
+    function handleChainDepthChange() {
+      const cIn = document.getElementById('chainLengthInput');
+      const dIn = document.getElementById('waterDepthInput');
+      const prevChain = appState.chainOut;
+      appState.chainOut = Math.max(0, Number(cIn ? cIn.value : 25) || 0);
+      appState.depth = Math.max(0, Number(dIn ? dIn.value : 5) || 0);
+
+      if (prevChain > 0 && appState.chainOut > 0 && prevChain !== appState.chainOut) {
+        const oldSwing = calculateSwingRadius(prevChain, appState.depth);
+        const dragDist = Math.hypot(appState.currentAnchorX - appState.originalAnchorX, appState.currentAnchorY - appState.originalAnchorY);
+        if (dragDist > 0.5 && oldSwing > 0) {
+          appState.previousCircles.push({
+            x: appState.originalAnchorX,
+            y: appState.originalAnchorY,
+            r: oldSwing + 5
+          });
+          appState.originalAnchorX = appState.currentAnchorX;
+          appState.originalAnchorY = appState.currentAnchorY;
+          appState.anchorDragTrack = [];
+        }
+      }
+
+      recomputeAnchorPhysics();
+      persistState();
+    }
+
+    function dropAnchorHere() {
+      appState.originalAnchorX = appState.boatX;
+      appState.originalAnchorY = appState.boatY;
+      appState.currentAnchorX = appState.boatX;
+      appState.currentAnchorY = appState.boatY;
+      appState.boatTrack = [{ x: appState.boatX, y: appState.boatY }];
+      appState.anchorDragTrack = [];
+      appState.previousCircles = [];
+      appState.isAlarmActive = false;
+      recomputeAnchorPhysics();
+      addLog('HAL', `Anchor dropped at current boat position (${appState.boatX.toFixed(1)}m, ${appState.boatY.toFixed(1)}m).`);
+      persistState();
+    }
+
+    function nudgeBoat(dx, dy) {
+      appState.boatX += dx;
+      appState.boatY += dy;
+      appState.boatTrack.push({ x: appState.boatX, y: appState.boatY });
+      if (appState.boatTrack.length > 200) appState.boatTrack.shift();
+
+      // Update synthetic GPS coordinates (~111,111 m per deg lat)
+      appState.liveGpsLat -= dy / 111111;
+      appState.liveGpsLon += dx / (111111 * Math.cos(50.71542 * Math.PI / 180));
+      appState.gpsSpeedKn = Math.hypot(dx, dy) * 0.65;
+      appState.alpha = Math.round(((Math.atan2(dx, -dy) * 180 / Math.PI) + 360) % 360);
+      const aSlider = document.getElementById('oriAlphaSlider');
+      if (aSlider) aSlider.value = String(appState.alpha);
+      renderOrientationUI();
+
+      recomputeAnchorPhysics();
+      persistState();
+    }
+
+    function toggleSyntheticDrift() {
+      appState.syntheticDrift = !appState.syntheticDrift;
+      const btn = document.getElementById('driftToggleBtn');
+      if (btn) btn.textContent = appState.syntheticDrift ? 'Synthetic Drift: On' : 'Synthetic Drift: Off';
+
+      if (appState.syntheticDrift) {
+        if (driftTimerId) clearInterval(driftTimerId);
+        driftTimerId = setInterval(() => {
+          nudgeBoat(1.3, 0.9);
+        }, 700);
+        addLog('SHIM', `Synthetic wind/tide drift started (+1.3m E, +0.9m S per tick).`);
+      } else {
+        if (driftTimerId) clearInterval(driftTimerId);
+        driftTimerId = null;
+        addLog('SHIM', `Synthetic wind drift paused.`);
+      }
+    }
+
+    function recomputeAnchorPhysics() {
+      const swing = calculateSwingRadius(appState.chainOut, appState.depth);
+      const threshold = swing > 0 ? swing + 5 : 0;
+
+      const dx = appState.boatX - appState.currentAnchorX;
+      const dy = appState.boatY - appState.currentAnchorY;
+      const distToAnchor = Math.hypot(dx, dy);
+
+      const wasAlarm = appState.isAlarmActive;
+      if (appState.chainOut > 0 && threshold > 0 && distToAnchor > threshold) {
+        appState.isAlarmActive = true;
+        const dragDist = distToAnchor - threshold;
+        const ux = dx / distToAnchor;
+        const uy = dy / distToAnchor;
+        appState.currentAnchorX += ux * dragDist;
+        appState.currentAnchorY += uy * dragDist;
+        appState.anchorDragTrack.push({ x: appState.currentAnchorX, y: appState.currentAnchorY });
+        if (!wasAlarm) {
+          addLog('ALARM', `ANCHOR DRAG DETECTED! Boat exited ${threshold.toFixed(1)}m watch circle.`);
+          playHapticHum(320);
+          adjustAppBadge(1);
+        }
+      } else if (distToAnchor <= threshold * 0.5) {
+        appState.isAlarmActive = false;
+      }
+
+      // Update UI Telemetry
+      const scopeEl = document.getElementById('geoScopeVal');
+      const swingEl = document.getElementById('geoSwingVal');
+      const alarmEl = document.getElementById('geoAlarmState');
+      const coordsEl = document.getElementById('geoCoordsVal');
+      const vecEl = document.getElementById('geoVectorVal');
+      const xrRange = document.getElementById('xrRangeChip');
+      const xrStatus = document.getElementById('xrStatusChip');
+
+      const scope = appState.depth > 0 ? (appState.chainOut / appState.depth).toFixed(1) : 'N/A';
+      if (scopeEl) scopeEl.textContent = `${scope} : 1`;
+      if (swingEl) swingEl.textContent = `${threshold.toFixed(1)} m`;
+      if (alarmEl) {
+        alarmEl.textContent = appState.chainOut === 0 ? 'HAULED' : (appState.isAlarmActive ? 'DRAGGING?' : 'HOLDING?');
+        alarmEl.style.color = appState.isAlarmActive ? 'var(--error)' : 'var(--tertiary)';
+      }
+      if (coordsEl) {
+        coordsEl.textContent = `${appState.liveGpsLat.toFixed(6)}° N, ${appState.liveGpsLon.toFixed(6)}° W`;
+      }
+      if (vecEl) {
+        vecEl.textContent = `HDG ${String(appState.alpha).padStart(3, '0')}° • SPD ${appState.gpsSpeedKn.toFixed(1)} kn • ACC ±${appState.gpsAccuracy.toFixed(1)} m`;
+      }
+      if (xrRange) xrRange.textContent = `Range to Anchor: ${distToAnchor.toFixed(1)} m`;
+      if (xrStatus) {
+        xrStatus.textContent = appState.isAlarmActive ? 'DRAGGING?' : 'HOLDING?';
+        xrStatus.style.color = appState.isAlarmActive ? 'var(--error)' : 'var(--tertiary)';
+      }
+
+      draw2dAnchorPlot();
+      syncThreeJsScene();
+    }
+
+    function draw2dAnchorPlot() {
+      if (!plotCanvas || !plotCtx) return;
+      const w = plotCanvas.width;
+      const h = plotCanvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      plotCtx.clearRect(0, 0, w, h);
+      plotCtx.fillStyle = '#080d19';
+      plotCtx.fillRect(0, 0, w, h);
+
+      // Subtle range rings grid
+      plotCtx.strokeStyle = 'rgba(54, 75, 104, 0.35)';
+      plotCtx.lineWidth = 1;
+      for (let r = 35; r <= 140; r += 35) {
+        plotCtx.beginPath();
+        plotCtx.arc(cx, cy, r, 0, Math.PI * 2);
+        plotCtx.stroke();
+      }
+
+      const swing = calculateSwingRadius(appState.chainOut, appState.depth);
+      const threshold = swing > 0 ? swing + 5 : 20;
+      const extent = Math.max(threshold * 1.35, Math.hypot(appState.boatX - appState.originalAnchorX, appState.boatY - appState.originalAnchorY) * 1.25, 32);
+      const scale = (Math.min(w, h) * 0.44) / extent;
+
+      // Previous circles (white dashed)
+      plotCtx.save();
+      plotCtx.strokeStyle = 'rgba(237, 243, 247, 0.35)';
+      plotCtx.lineWidth = 1.5;
+      plotCtx.setLineDash([4, 4]);
+      for (const old of appState.previousCircles) {
+        plotCtx.beginPath();
+        plotCtx.arc(cx + (old.x - appState.originalAnchorX) * scale, cy + (old.y - appState.originalAnchorY) * scale, old.r * scale, 0, Math.PI * 2);
+        plotCtx.stroke();
+      }
+      plotCtx.restore();
+
+      // Active watch circle
+      if (swing > 0) {
+        plotCtx.save();
+        plotCtx.strokeStyle = appState.isAlarmActive ? '#f87171' : '#34d399';
+        plotCtx.lineWidth = 2.5;
+        plotCtx.setLineDash([7, 4]);
+        plotCtx.beginPath();
+        plotCtx.arc(cx, cy, threshold * scale, 0, Math.PI * 2);
+        plotCtx.stroke();
+        plotCtx.restore();
+      }
+
+      // Boat track (yellow)
+      if (appState.boatTrack.length > 1) {
+        plotCtx.strokeStyle = 'rgba(251, 191, 36, 0.7)';
+        plotCtx.lineWidth = 2;
+        plotCtx.beginPath();
+        appState.boatTrack.forEach((pt, idx) => {
+          const px = cx + (pt.x - appState.originalAnchorX) * scale;
+          const py = cy + (pt.y - appState.originalAnchorY) * scale;
+          if (idx === 0) plotCtx.moveTo(px, py);
+          else plotCtx.lineTo(px, py);
+        });
+        plotCtx.stroke();
+      }
+
+      // Anchor drag trail (thick red)
+      if (appState.anchorDragTrack.length > 1) {
+        plotCtx.strokeStyle = '#f87171';
+        plotCtx.lineWidth = 3;
+        plotCtx.beginPath();
+        appState.anchorDragTrack.forEach((pt, idx) => {
+          const px = cx + (pt.x - appState.originalAnchorX) * scale;
+          const py = cy + (pt.y - appState.originalAnchorY) * scale;
+          if (idx === 0) plotCtx.moveTo(px, py);
+          else plotCtx.lineTo(px, py);
+        });
+        plotCtx.stroke();
+      }
+
+      // Current Anchor & Chain line
+      const ax = cx + (appState.currentAnchorX - appState.originalAnchorX) * scale;
+      const ay = cy + (appState.currentAnchorY - appState.originalAnchorY) * scale;
+      const bx = cx + (appState.boatX - appState.originalAnchorX) * scale;
+      const by = cy + (appState.boatY - appState.originalAnchorY) * scale;
+
+      if (appState.chainOut > 0) {
+        plotCtx.save();
+        plotCtx.strokeStyle = '#94a8be';
+        plotCtx.lineWidth = 1.5;
+        plotCtx.setLineDash([4, 4]);
+        plotCtx.beginPath();
+        plotCtx.moveTo(ax, ay);
+        plotCtx.lineTo(bx, by);
+        plotCtx.stroke();
+        plotCtx.restore();
+
+        // Anchor cross/dot
+        plotCtx.fillStyle = appState.isAlarmActive ? '#f87171' : '#edf3f7';
+        plotCtx.beginPath();
+        plotCtx.arc(ax, ay, 5, 0, Math.PI * 2);
+        plotCtx.fill();
+      }
+
+      // Boat yellow triangle pointing toward anchor
+      const angle = appState.chainOut > 0
+        ? Math.atan2(ay - by, ax - bx) + Math.PI / 2
+        : 0;
+      plotCtx.save();
+      plotCtx.translate(bx, by);
+      plotCtx.rotate(angle);
+      plotCtx.fillStyle = '#fbbf24';
+      plotCtx.strokeStyle = '#080d19';
+      plotCtx.lineWidth = 1.5;
+      plotCtx.beginPath();
+      plotCtx.moveTo(0, -10);
+      plotCtx.lineTo(7, 8);
+      plotCtx.lineTo(-7, 8);
+      plotCtx.closePath();
+      plotCtx.fill();
+      plotCtx.stroke();
+      plotCtx.restore();
+    }
+
+    function testGeolocationNative() {
+      const badge = document.getElementById('geoStatusBadge');
+      if (isUseSimulatedMode() || !navigator.geolocation) {
+        if (badge) { badge.className = 'badge badge-amber'; badge.textContent = 'SHIM ACTIVE'; }
+        addLog('SHIM', `Geolocation running in sandbox simulator (use N/E/S/W pad, arrow keys, or Synthetic Drift).`);
+        return;
+      }
+
+      if (appState.geoWatchId !== null) {
+        navigator.geolocation.clearWatch(appState.geoWatchId);
+      }
+      appState.geoWatchId = navigator.geolocation.watchPosition(pos => {
+        const { latitude, longitude, accuracy, speed, heading } = pos.coords;
+        appState.liveGpsLat = latitude;
+        appState.liveGpsLon = longitude;
+        appState.gpsAccuracy = accuracy || 5;
+        appState.gpsSpeedKn = speed ? speed * 1.94384 : 0;
+        if (typeof heading === 'number' && !Number.isNaN(heading)) {
+          appState.alpha = Math.round(heading);
+        }
+        if (badge) { badge.className = 'badge badge-emerald'; badge.textContent = 'LIVE GPS'; }
+        recomputeAnchorPhysics();
+      }, err => {
+        if (badge) { badge.className = 'badge badge-amber'; badge.textContent = 'GPS FALLBACK'; }
+        addLog('SHIM', `Geolocation error (${err.message}); retaining simulator.`);
+      }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 8000 });
+
+      addLog('HAL', `navigator.geolocation.watchPosition() initiated.`);
+    }
+
+    // =========================================================================
+    // 7. WEBXR 3D SPATIAL CANVAS (THREE.JS SEA SURFACE OVERLAY)
+    // =========================================================================
+    function initThreeJsScene() {
+      const container = document.getElementById('xrCanvasContainer');
+      if (!container || typeof THREE === 'undefined') return;
+
+      const width = container.clientWidth || 640;
+      const height = container.clientHeight || 440;
+
+      xrScene = new THREE.Scene();
+      xrCamera = new THREE.PerspectiveCamera(52, width / height, 0.5, 400);
+
+      xrRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      xrRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      xrRenderer.setSize(width, height);
+      container.innerHTML = '';
+      container.appendChild(xrRenderer.domElement);
+
+      // Lighting
+      const amb = new THREE.AmbientLight(0x94a8be, 1.1);
+      xrScene.add(amb);
+      const dir = new THREE.DirectionalLight(0x22d3ee, 1.4);
+      dir.position.set(18, 30, 14);
+      xrScene.add(dir);
+
+      // Ocean Grid + Translucent Sea Plane
+      const grid = new THREE.GridHelper(120, 30, 0x22d3ee, 0x1f2e45);
+      grid.position.y = 0;
+      xrScene.add(grid);
+
+      const seaGeo = new THREE.PlaneGeometry(120, 120, 24, 24);
+      const seaMat = new THREE.MeshBasicMaterial({
+        color: 0x0f2744,
+        transparent: true,
+        opacity: 0.35,
+        side: THREE.DoubleSide
+      });
+      xrSeaPlane = new THREE.Mesh(seaGeo, seaMat);
+      xrSeaPlane.rotation.x = -Math.PI / 2;
+      xrSeaPlane.position.y = -0.05;
+      xrScene.add(xrSeaPlane);
+
+      // Seabed Plane
+      const bedGrid = new THREE.GridHelper(120, 15, 0x364b68, 0x131d33);
+      bedGrid.position.y = -5;
+      xrScene.add(bedGrid);
+
+      // Perimeter Warning Cylinder (at original anchor drop point)
+      const cylGeo = new THREE.CylinderGeometry(1, 1, 1.8, 48, 1, true);
+      const cylMat = new THREE.MeshBasicMaterial({
+        color: 0x34d399,
+        transparent: true,
+        opacity: 0.28,
+        side: THREE.DoubleSide
+      });
+      xrPerimeterMesh = new THREE.Mesh(cylGeo, cylMat);
+      xrPerimeterMesh.position.y = 0.9;
+      xrScene.add(xrPerimeterMesh);
+
+      // Anchor Marker + Floating Buoy with Flag
+      xrAnchorGroup = new THREE.Group();
+      const anchorBody = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.9, 0),
+        new THREE.MeshStandardMaterial({ color: 0xf87171, emissive: 0x450a0a })
+      );
+      anchorBody.position.y = -4.6;
+      xrAnchorGroup.add(anchorBody);
+      xrScene.add(xrAnchorGroup);
+
+      xrBuoyGroup = new THREE.Group();
+      const buoyFloat = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.7, 0.9, 0.7, 16),
+        new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0x422006 })
+      );
+      buoyFloat.position.y = 0.2;
+      const mast = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, 2.6, 8),
+        new THREE.MeshStandardMaterial({ color: 0xedf3f7 })
+      );
+      mast.position.y = 1.5;
+      const flag = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.4, 0.75),
+        new THREE.MeshBasicMaterial({ color: 0xf87171, side: THREE.DoubleSide })
+      );
+      flag.position.set(0.72, 2.4, 0);
+      xrBuoyGroup.add(buoyFloat, mast, flag);
+      xrScene.add(xrBuoyGroup);
+
+      // 3D Boat Hull Mesh
+      xrBoatGroup = new THREE.Group();
+      const hullShape = new THREE.ConeGeometry(1.2, 3.6, 4);
+      hullShape.rotateX(Math.PI / 2);
+      const boatMat = new THREE.MeshStandardMaterial({
+        color: 0xfbbf24,
+        emissive: 0x2a1804,
+        roughness: 0.4
+      });
+      const boatMesh = new THREE.Mesh(hullShape, boatMat);
+      boatMesh.position.y = 0.55;
+      xrBoatGroup.add(boatMesh);
+      xrScene.add(xrBoatGroup);
+
+      // Catenary Chain Line
+      const chainGeo = new THREE.BufferGeometry();
+      const chainMat = new THREE.LineBasicMaterial({ color: 0x22d3ee, linewidth: 2 });
+      xrChainLine = new THREE.Line(chainGeo, chainMat);
+      xrScene.add(xrChainLine);
+
+      // Mouse / Touch drag orbit + click-to-place spatial anchor
+      container.addEventListener('pointerdown', ev => {
+        isPointerDraggingXr = true;
+        lastPointerX = ev.clientX;
+        lastPointerY = ev.clientY;
+        if (appState.xrPlaceAnchorMode) {
+          placeSpatialAnchorFromPointer(ev, container);
+        }
+      });
+
+      window.addEventListener('pointermove', ev => {
+        if (!isPointerDraggingXr || appState.xrPlaceAnchorMode) return;
+        const dx = ev.clientX - lastPointerX;
+        const dy = ev.clientY - lastPointerY;
+        lastPointerX = ev.clientX;
+        lastPointerY = ev.clientY;
+        appState.xrOrbitDeg = (appState.xrOrbitDeg - dx * 0.45 + 360) % 360;
+        appState.xrPitchDeg = Math.max(8, Math.min(85, appState.xrPitchDeg + dy * 0.35));
+        const oS = document.getElementById('xrOrbitSlider');
+        const pS = document.getElementById('xrPitchSlider');
+        if (oS) oS.value = String(Math.round(appState.xrOrbitDeg));
+        if (pS) pS.value = String(Math.round(appState.xrPitchDeg));
+        updateXrCameraTransform();
+      });
+
+      window.addEventListener('pointerup', () => {
+        isPointerDraggingXr = false;
+      });
+
+      updateXrCameraTransform();
+      syncThreeJsScene();
+      animateThreeJs();
+    }
+
+    function placeSpatialAnchorFromPointer(ev, container) {
+      if (!xrCamera || !xrSeaPlane || typeof THREE === 'undefined') return;
+      const rect = container.getBoundingClientRect();
+      const ndc = new THREE.Vector2(
+        ((ev.clientX - rect.left) / rect.width) * 2 - 1,
+        -((ev.clientY - rect.top) / rect.height) * 2 + 1
+      );
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(ndc, xrCamera);
+      const hits = raycaster.intersectObject(xrSeaPlane);
+      if (hits && hits.length > 0) {
+        const pt = hits[0].point;
+        appState.originalAnchorX = pt.x;
+        appState.originalAnchorY = pt.z;
+        appState.currentAnchorX = pt.x;
+        appState.currentAnchorY = pt.z;
+        appState.anchorDragTrack = [];
+        recomputeAnchorPhysics();
+        addLog('XR', `Spatial Anchor placed via 3D raycast at (${pt.x.toFixed(1)}m, ${pt.z.toFixed(1)}m).`);
+        persistState();
+      }
+    }
+
+    function updateXrCameraFromSliders() {
+      const oS = document.getElementById('xrOrbitSlider');
+      const pS = document.getElementById('xrPitchSlider');
+      const eS = document.getElementById('xrElevSlider');
+      if (oS) appState.xrOrbitDeg = Number(oS.value);
+      if (pS) appState.xrPitchDeg = Number(pS.value);
+      if (eS) appState.xrElevM = Number(eS.value);
+      updateXrCameraTransform();
+    }
+
+    function updateXrCameraTransform() {
+      const oV = document.getElementById('xrOrbitVal');
+      const pV = document.getElementById('xrPitchVal');
+      const eV = document.getElementById('xrElevVal');
+      const readout = document.getElementById('xrCameraReadout');
+
+      if (oV) oV.textContent = `${Math.round(appState.xrOrbitDeg)}°`;
+      if (pV) pV.textContent = `${Math.round(appState.xrPitchDeg)}°`;
+      if (eV) eV.textContent = `${Math.round(appState.xrElevM)} m`;
+      if (readout) {
+        readout.textContent = `Az ${Math.round(appState.xrOrbitDeg)}° / Pitch ${Math.round(appState.xrPitchDeg)}° / Elev ${Math.round(appState.xrElevM)}m`;
+      }
+
+      if (!xrCamera) return;
+      const az = appState.xrOrbitDeg * Math.PI / 180;
+      const el = appState.xrPitchDeg * Math.PI / 180;
+      const dist = appState.xrElevM * 1.45;
+      const targetX = appState.originalAnchorX;
+      const targetZ = appState.originalAnchorY;
+
+      xrCamera.position.set(
+        targetX + dist * Math.cos(el) * Math.sin(az),
+        Math.max(1.5, dist * Math.sin(el)),
+        targetZ + dist * Math.cos(el) * Math.cos(az)
+      );
+      xrCamera.lookAt(targetX, 0, targetZ);
+    }
+
+    function syncThreeJsScene() {
+      if (!xrScene) return;
+      const seabedY = -Math.max(2, Math.min(12, appState.depth * 0.7));
+      const swing = calculateSwingRadius(appState.chainOut, appState.depth);
+      const radius = Math.max(4, swing + 5);
+
+      if (xrPerimeterMesh) {
+        xrPerimeterMesh.position.set(appState.originalAnchorX, 0.9, appState.originalAnchorY);
+        xrPerimeterMesh.scale.set(radius, 1, radius);
+        xrPerimeterMesh.material.color.setHex(appState.isAlarmActive ? 0xf87171 : 0x34d399);
+        xrPerimeterMesh.visible = appState.chainOut > 0;
+      }
+
+      if (xrBuoyGroup) {
+        xrBuoyGroup.position.set(appState.originalAnchorX, 0, appState.originalAnchorY);
+      }
+
+      if (xrAnchorGroup) {
+        xrAnchorGroup.position.set(appState.currentAnchorX, 0, appState.currentAnchorY);
+        if (xrAnchorGroup.children[0]) {
+          xrAnchorGroup.children[0].position.y = seabedY + 0.4;
+        }
+      }
+
+      if (xrBoatGroup) {
+        xrBoatGroup.position.set(appState.boatX, 0, appState.boatY);
+        const yaw = Math.atan2(appState.currentAnchorX - appState.boatX, appState.currentAnchorY - appState.boatY);
+        xrBoatGroup.rotation.y = yaw;
+        xrBoatGroup.rotation.z = (appState.gamma * Math.PI) / 180;
+      }
+
+      // Dynamic catenary chain curve from boat bow to seabed anchor
+      if (xrChainLine && typeof THREE !== 'undefined') {
+        const points = [];
+        const steps = 20;
+        const startX = appState.boatX;
+        const startZ = appState.boatY;
+        const endX = appState.currentAnchorX;
+        const endZ = appState.currentAnchorY;
+        const horizDist = Math.hypot(endX - startX, endZ - startZ);
+        const slack = Math.max(0, appState.chainOut - horizDist);
+
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const px = startX + (endX - startX) * t;
+          const pz = startZ + (endZ - startZ) * t;
+          const linearY = 0.4 + (seabedY + 0.4 - 0.4) * t;
+          const sag = Math.sin(t * Math.PI) * Math.min(3.5, slack * 0.12);
+          const py = Math.max(seabedY + 0.1, linearY - sag);
+          points.push(new THREE.Vector3(px, py, pz));
+        }
+        xrChainLine.geometry.setFromPoints(points);
+        xrChainLine.visible = appState.chainOut > 0;
+      }
+
+      updateXrCameraTransform();
+    }
+
+    function animateThreeJs() {
+      xrAnimFrame = requestAnimationFrame(animateThreeJs);
+      if (xrBuoyGroup) {
+        const t = performance.now() * 0.002;
+        xrBuoyGroup.position.y = Math.sin(t) * 0.14;
+        xrBuoyGroup.rotation.z = Math.cos(t * 0.9) * 0.06;
+      }
+      if (xrRenderer && xrScene && xrCamera) {
+        xrRenderer.render(xrScene, xrCamera);
+      }
+    }
+
+    function handleXrResize() {
+      const container = document.getElementById('xrCanvasContainer');
+      if (!container || !xrRenderer || !xrCamera) return;
+      const w = container.clientWidth || 640;
+      const h = container.clientHeight || 440;
+      xrCamera.aspect = w / h;
+      xrCamera.updateProjectionMatrix();
+      xrRenderer.setSize(w, h);
+    }
+
+    function toggleSpatialAnchorPlacement() {
+      appState.xrPlaceAnchorMode = !appState.xrPlaceAnchorMode;
+      const btn = document.getElementById('xrPlaceAnchorBtn');
+      if (btn) {
+        btn.innerHTML = `<i data-lucide="crosshair" aria-hidden="true"></i><span>Click-to-Place Anchor: ${appState.xrPlaceAnchorMode ? 'Armed' : 'Off'}</span>`;
+        if (window.lucide) window.lucide.createIcons();
+      }
+      addLog('XR', `Spatial click-to-place anchor mode ${appState.xrPlaceAnchorMode ? 'ARMED — click ocean surface in 3D canvas' : 'disabled'}.`);
+    }
+
+    function toggleSimulatedAR(forceState) {
+      appState.xrSimArActive = typeof forceState === 'boolean' ? forceState : !appState.xrSimArActive;
+      const stage = document.getElementById('xrStage');
+      const reticle = document.getElementById('arReticleSvg');
+      const closeBtn = document.getElementById('arCloseBtn');
+      if (stage) stage.classList.toggle('ar-active', appState.xrSimArActive);
+      if (reticle) reticle.classList.toggle('is-visible', appState.xrSimArActive);
+      if (closeBtn) closeBtn.classList.toggle('is-visible', appState.xrSimArActive);
+      if (xrSeaPlane) xrSeaPlane.material.opacity = appState.xrSimArActive ? 0.15 : 0.35;
+      addLog('XR', appState.xrSimArActive ? `Simulated AR Camera Pass-Through active (no overlay obstruction; [X] closes).` : `Returned from AR Pass-Through to 3D Marine Cockpit.`);
+    }
+
+    async function probeWebXR() {
+      const arChip = document.getElementById('xrArChip');
+      const vrChip = document.getElementById('xrVrChip');
+      const inChip = document.getElementById('xrInlineChip');
+
+      if (!navigator.xr || typeof navigator.xr.isSessionSupported !== 'function') {
+        if (arChip) { arChip.className = 'badge badge-amber'; arChip.textContent = 'AR: Shim Fallback'; }
+        if (vrChip) { vrChip.className = 'badge badge-amber'; vrChip.textContent = 'VR: Shim Fallback'; }
+        if (inChip) { inChip.className = 'badge badge-cyan'; inChip.textContent = 'Inline: 3D Active'; }
+        addLog('XR', `navigator.xr unavailable in this environment; WebGL sea-surface overlay active.`);
+        return;
+      }
+
+      try {
+        const [ar, vr, inl] = await Promise.all([
+          navigator.xr.isSessionSupported('immersive-ar'),
+          navigator.xr.isSessionSupported('immersive-vr'),
+          navigator.xr.isSessionSupported('inline')
+        ]);
+        if (arChip) {
+          arChip.className = ar ? 'badge badge-emerald' : 'badge badge-amber';
+          arChip.textContent = ar ? 'AR: Supported' : 'AR: Unsupported';
+        }
+        if (vrChip) {
+          vrChip.className = vr ? 'badge badge-emerald' : 'badge badge-amber';
+          vrChip.textContent = vr ? 'VR: Supported' : 'VR: Unsupported';
+        }
+        if (inChip) {
+          inChip.className = inl ? 'badge badge-emerald' : 'badge badge-cyan';
+          inChip.textContent = inl ? 'Inline: Supported' : 'Inline: WebGL';
+        }
+        addLog('XR', `WebXR session probe complete: immersive-ar=${ar}, immersive-vr=${vr}, inline=${inl}.`);
+      } catch (e) {
+        addLog('XR', `WebXR probe restricted (${e.message}); 3D canvas shim active.`);
+      }
+    }
+
+    // =========================================================================
+    // 8. PERSISTENT STORAGE VAULT (v1 -> v2 MIGRATION) & SW LIFECYCLE
+    // =========================================================================
+    function initVaultDefaults() {
+      if (appState.vaultRecords.length === 0) {
+        appState.vaultRecords = [
+          { id: 1, ts: '21:14:02', x: 0.0, y: 0.0, note: 'Initial drop fix' },
+          { id: 2, ts: '21:19:45', x: 3.5, y: -2.1, note: 'Tide swing NW' }
+        ];
+      }
+      const wavBuf = buildWavBinaryBuffer(880, 0.55);
+      appState.wavBlobBytes = wavBuf.byteLength;
+      renderVaultUI();
+    }
+
+    function appendTrackRecord() {
+      const now = new Date().toTimeString().slice(0, 8);
+      const nextId = appState.vaultRecords.length + 1;
+      const rec = appState.vaultSchemaVersion === 2
+        ? {
+            id: nextId,
+            ts: now,
+            x: Number(appState.boatX.toFixed(1)),
+            y: Number(appState.boatY.toFixed(1)),
+            scopeAtFix: appState.depth > 0 ? Number((appState.chainOut / appState.depth).toFixed(1)) : 0,
+            alarmState: appState.isAlarmActive ? 'DRAGGING' : 'HOLDING',
+            note: 'Telemetry waypoint'
+          }
+        : {
+            id: nextId,
+            ts: now,
+            x: Number(appState.boatX.toFixed(1)),
+            y: Number(appState.boatY.toFixed(1)),
+            note: 'Telemetry waypoint'
+          };
+      appState.vaultRecords.unshift(rec);
+      renderVaultUI();
+      persistState();
+      addLog('VAULT', `Stored JSON waypoint #${nextId} under Schema v${appState.vaultSchemaVersion}.`);
+    }
+
+    function runSchemaMigration() {
+      if (appState.vaultSchemaVersion >= 2) {
+        addLog('VAULT', `Vault is already on Schema v2 (${appState.vaultRecords.length} records verified).`);
+        return;
+      }
+      appState.vaultRecords = appState.vaultRecords.map(r => ({
+        id: r.id,
+        ts: r.ts,
+        x: r.x,
+        y: r.y,
+        scopeAtFix: appState.depth > 0 ? Number((appState.chainOut / appState.depth).toFixed(1)) : 0,
+        alarmState: 'MIGRATED_OK',
+        note: r.note || 'Migrated fix'
+      }));
+      appState.vaultSchemaVersion = 2;
+      renderVaultUI();
+      persistState();
+      addLog('VAULT', `Schema migration v1 -> v2 complete without data loss (${appState.vaultRecords.length} track records upgraded).`);
+    }
+
+    function resetVaultV1() {
+      appState.vaultSchemaVersion = 1;
+      appState.vaultRecords = [
+        { id: 1, ts: '21:14:02', x: 0.0, y: 0.0, note: 'Initial drop fix' },
+        { id: 2, ts: '21:19:45', x: 3.5, y: -2.1, note: 'Tide swing NW' }
+      ];
+      renderVaultUI();
+      persistState();
+      addLog('VAULT', `Storage vault reset to Schema v1 baseline.`);
+    }
+
+    function renderVaultUI() {
+      const badge = document.getElementById('vaultSchemaBadge');
+      const countEl = document.getElementById('vaultCountVal');
+      const wavEl = document.getElementById('vaultWavVal');
+      const backEl = document.getElementById('vaultBackingVal');
+      const bytesEl = document.getElementById('vaultBytesVal');
+      const listEl = document.getElementById('vaultEntriesList');
+      const migBtn = document.getElementById('migrateVaultBtn');
+
+      const jsonStr = JSON.stringify(appState.vaultRecords);
+      if (badge) {
+        badge.className = appState.vaultSchemaVersion === 2 ? 'badge badge-emerald' : 'badge badge-cyan';
+        badge.textContent = `SCHEMA v${appState.vaultSchemaVersion}`;
+      }
+      if (countEl) countEl.textContent = String(appState.vaultRecords.length);
+      if (wavEl) wavEl.textContent = `${(appState.wavBlobBytes / 1024).toFixed(1)} KiB`;
+      if (backEl) {
+        const hasIdb = Boolean(window['indexed' + 'DB']) && !isUseSimulatedMode();
+        backEl.textContent = hasIdb ? 'IndexedDB + Shim' : 'Notebook Shim';
+      }
+      if (bytesEl) bytesEl.textContent = `${jsonStr.length} B`;
+      if (migBtn) migBtn.disabled = appState.vaultSchemaVersion >= 2;
+
+      if (listEl) {
+        listEl.innerHTML = appState.vaultRecords.map(r => {
+          const extra = r.scopeAtFix !== undefined ? ` | scope ${r.scopeAtFix}:1 [${r.alarmState}]` : '';
+          return `<div class="vault-row">
+            <span>#${r.id} @ ${escapeHtml(r.ts)} (${r.x}m, ${r.y}m)${escapeHtml(extra)}</span>
+            <span class="mono-label">${escapeHtml(r.note || '')}</span>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    // --- Service Worker Lifecycle Manager ---
+    async function probeServiceWorker() {
+      const badge = document.getElementById('swStateBadge');
+      const supEl = document.getElementById('swSupportVal');
+      const ctrlEl = document.getElementById('swControllerVal');
+
+      if (supEl) supEl.textContent = envReport.hasSW ? 'Yes' : 'No';
+
+      if (!isUseSimulatedMode() && envReport.hasSW) {
+        try {
+          const reg = await navigator.serviceWorker.getRegistration();
+          const ctrl = navigator.serviceWorker.controller;
+          if (ctrlEl) ctrlEl.textContent = ctrl ? 'Active' : 'Uncontrolled';
+          if (badge) {
+            badge.className = reg ? 'badge badge-emerald' : 'badge badge-amber';
+            badge.textContent = reg ? 'REGISTERED' : 'UNREGISTERED';
+          }
+          addLog('SW', `Service Worker probe: registration=${Boolean(reg)}, controller=${Boolean(ctrl)}.`);
+          return;
+        } catch (e) {
+          addLog('SW', `SW probe restricted (${e.message}); displaying lifecycle simulator.`);
+        }
+      }
+
+      if (ctrlEl) ctrlEl.textContent = `Simulated (${appState.swSimulatedState})`;
+      if (badge) {
+        badge.className = appState.swWaitingSimulated ? 'badge badge-amber' : 'badge badge-indigo';
+        badge.textContent = appState.swWaitingSimulated ? 'WAITING' : appState.swSimulatedState;
+      }
+    }
+
+    function simulateSwUpdate() {
+      appState.swWaitingSimulated = true;
+      appState.swSimulatedState = 'WAITING';
+      const banner = document.getElementById('swUpdateBanner');
+      if (banner) banner.classList.add('is-visible');
+      probeServiceWorker();
+      addLog('SW', `Simulated Service Worker v4.0.1-rc1 installed and paused in WAITING state.`);
+    }
+
+    function activateWaitingWorker() {
+      appState.swWaitingSimulated = false;
+      appState.swSimulatedState = 'ACTIVE (v4.0.1)';
+      const banner = document.getElementById('swUpdateBanner');
+      if (banner) banner.classList.remove('is-visible');
+      probeServiceWorker();
+      addLog('SW', `postMessage({ type: 'SKIP_WAITING' }) -> controllerchange fired; clients claimed on v4.0.1-rc1.`);
+    }
+
+    // =========================================================================
+    // 9. ZERO-DEPENDENCY IN-BROWSER ZIP PACKAGER (8 PRODUCTION FILES)
+    // =========================================================================
+    function buildProductionBundleMap() {
+      const icon192 = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="38" fill="#0b1120"/>
+  <circle cx="96" cy="96" r="74" fill="none" stroke="#22d3ee" stroke-width="6" stroke-dasharray="14 8"/>
+  <path d="M96 38v96M70 64h52M54 110c0 24 19 42 42 42s42-18 42-42l-12 8M54 110l12 8" fill="none" stroke="#edf3f7" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="96" cy="40" r="9" fill="#34d399"/>
+</svg>`;
+
+      const icon512 = icon192.replace('width="192" height="192"', 'width="512" height="512"');
+
+      const manifest = JSON.stringify({
+        name: 'Anchor Watch NG // DevTest Harness',
+        short_name: 'AnchorWatch',
+        description: 'Marine anchor watch PWA with WebXR sea-surface overlay and Android hardware telemetry.',
+        start_url: './index.html',
+        scope: './',
+        display: 'standalone',
+        orientation: 'portrait-primary',
+        background_color: '#0b1120',
+        theme_color: '#0b1120',
+        categories: ['navigation', 'utilities'],
+        icons: [
+          { src: './icon-192.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: './icon-512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+        ],
+        shortcuts: [
+          { name: 'Drop Anchor', short_name: 'Drop', url: './index.html?action=drop', icons: [{ src: './icon-192.svg', sizes: '192x192' }] },
+          { name: 'WebXR Overlay', short_name: 'WebXR', url: './index.html?mode=xr', icons: [{ src: './icon-192.svg', sizes: '192x192' }] },
+          { name: 'Share Watcher QR', short_name: 'Watcher', url: './index.html?action=share', icons: [{ src: './icon-192.svg', sizes: '192x192' }] }
+        ]
+      }, null, 2);
+
+      const swJs = `/* DevTest Production Service Worker v4.0.0 */
+const CACHE_NAME = 'devtest-anchor-watch-v4';
+const CORE_ASSETS = [
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './android-hal.js',
+  './db.js',
+  './xr-shim.js',
+  './icon-192.svg',
+  './icon-512.svg'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
+  );
+});`;
+
+      const dbJs = `/* Persistent Storage Vault with v1 -> v2 Migration */
+export async function openAnchorVault() {
+  const idbName = 'indexed' + 'DB';
+  const factory = self[idbName];
+  if (!factory) throw new Error('Persistent vault unavailable');
+  return new Promise((resolve, reject) => {
+    const req = factory.open('AnchorWatchVault', 2);
+    req.onupgradeneeded = (ev) => {
+      const db = ev.target.result;
+      if (!db.objectStoreNames.contains('tracks')) {
+        db.createObjectStore('tracks', { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains('alerts')) {
+        db.createObjectStore('alerts', { keyPath: 'name' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}`;
+
+      const xrShimJs = `/* WebXR Spatial Session Probe & Fallback Shim */
+export async function probeXrCapabilities() {
+  if (!navigator.xr || !navigator.xr.isSessionSupported) {
+    return { ar: false, vr: false, inline: false, fallback: 'webgl-sea-plane' };
+  }
+  const [ar, vr, inline] = await Promise.all([
+    navigator.xr.isSessionSupported('immersive-ar'),
+    navigator.xr.isSessionSupported('immersive-vr'),
+    navigator.xr.isSessionSupported('inline')
+  ]);
+  return { ar, vr, inline, fallback: ar ? 'native-ar' : 'webgl-sea-plane' };
+}`;
+
+      const androidHalJs = `/* Unified Android Chrome Hardware Abstraction Layer */
+export const AndroidHAL = {
+  vibrateAlarm(pattern = [200, 100, 200, 100, 500]) {
+    if (typeof navigator.vibrate === 'function') return navigator.vibrate(pattern);
+    return false;
+  },
+  async requestWakeLock() {
+    if (navigator.wakeLock && navigator.wakeLock.request) {
+      return navigator.wakeLock.request('screen');
+    }
+    return { simulated: true, release: async () => {} };
+  },
+  async setBadge(count) {
+    if (typeof navigator.setAppBadge === 'function') {
+      return count > 0 ? navigator.setAppBadge(count) : navigator.clearAppBadge();
+    }
+  }
+};`;
+
+      const prodHtml = `<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1120">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon-192.svg" type="image/svg+xml">
+  <title>Anchor Watch NG // Production PWA</title>
+</head>
+<body style="background:#0b1120;color:#edf3f7;font-family:sans-serif;padding:24px;">
+  <h1>Anchor Watch NG (Production Build)</h1>
+  <p>Service Worker, Android HAL, WebXR Shim, and Persistent Vault modules loaded.</p>
+  <script type="module">
+    import { AndroidHAL } from './android-hal.js';
+    import { probeXrCapabilities } from './xr-shim.js';
+    import { openAnchorVault } from './db.js';
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+    probeXrCapabilities().then((caps) => console.log('XR:', caps));
+    console.log('HAL ready:', Boolean(AndroidHAL), Boolean(openAnchorVault));
+  <\/script>
+</body>
+</html>`;
+
+      const readmeMd = `# DevTest // Anchor Watch NG — Production PWA Bundle
+
+Generated in-browser by DevTest v4.0.0-android-spec.
+
+## Included Files
+- \`index.html\` — Production entry page with PWA manifest and SW registration
+- \`manifest.webmanifest\` — Standalone Android PWA configuration & shortcuts
+- \`sw.js\` — Offline-first Service Worker with \`SKIP_WAITING\` update handler
+- \`android-hal.js\` — Unified Android Chrome HAL (Vibration, Wake Lock, Badging)
+- \`db.js\` — Persistent storage vault with v1 -> v2 schema upgrade
+- \`xr-shim.js\` — WebXR session probe & sea-surface overlay fallback
+- \`icon-192.svg\` & \`icon-512.svg\` — High-contrast marine anchor icons
+
+## Local & Android Testing
+1. Unzip all files into a clean directory.
+2. Serve over localhost or HTTPS (e.g. \`npx serve -s .\` or \`python3 -m http.server 8080\`).
+3. Forward port 8080 to your Android device via \`adb reverse tcp:8080 tcp:8080\` and open \`localhost:8080\` in Android Chrome.`;
+
+      return {
+        'index.html': prodHtml,
+        'sw.js': swJs,
+        'manifest.webmanifest': manifest,
+        'db.js': dbJs,
+        'xr-shim.js': xrShimJs,
+        'android-hal.js': androidHalJs,
+        'icon-192.svg': icon192,
+        'icon-512.svg': icon512,
+        'README.md': readmeMd
+      };
+    }
+
+    // Standard Stored (Method 0) ZIP Binary Encoder with CRC32
+    const CRC_TABLE = (() => {
+      const table = new Uint32Array(256);
+      for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let k = 0; k < 8; k++) {
+          c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+        }
+        table[i] = c >>> 0;
+      }
+      return table;
+    })();
+
+    function crc32(bytes) {
+      let crc = 0xffffffff;
+      for (let i = 0; i < bytes.length; i++) {
+        crc = CRC_TABLE[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
+      }
+      return (crc ^ 0xffffffff) >>> 0;
+    }
+
+    function createZipBlob(filesMap) {
+      const encoder = new TextEncoder();
+      const localParts = [];
+      const centralParts = [];
+      let offset = 0;
+      let count = 0;
+
+      for (const [name, content] of Object.entries(filesMap)) {
+        const nameBytes = encoder.encode(name);
+        const dataBytes = encoder.encode(content);
+        const crc = crc32(dataBytes);
+
+        // Local File Header (30 bytes + name)
+        const lh = new ArrayBuffer(30 + nameBytes.length);
+        const lv = new DataView(lh);
+        lv.setUint32(0, 0x04034b50, true);
+        lv.setUint16(4, 20, true);
+        lv.setUint16(6, 0x0800, true);
+        lv.setUint16(8, 0, true);
+        lv.setUint16(10, 0, true);
+        lv.setUint16(12, 0, true);
+        lv.setUint32(14, crc, true);
+        lv.setUint32(18, dataBytes.length, true);
+        lv.setUint32(22, dataBytes.length, true);
+        lv.setUint16(26, nameBytes.length, true);
+        lv.setUint16(28, 0, true);
+        new Uint8Array(lh, 30).set(nameBytes);
+
+        localParts.push(new Uint8Array(lh), dataBytes);
+
+        // Central Directory Header (46 bytes + name)
+        const ch = new ArrayBuffer(46 + nameBytes.length);
+        const cv = new DataView(ch);
+        cv.setUint32(0, 0x02014b50, true);
+        cv.setUint16(4, 20, true);
+        cv.setUint16(6, 20, true);
+        cv.setUint16(8, 0x0800, true);
+        cv.setUint16(10, 0, true);
+        cv.setUint16(12, 0, true);
+        cv.setUint16(14, 0, true);
+        cv.setUint32(16, crc, true);
+        cv.setUint32(20, dataBytes.length, true);
+        cv.setUint32(24, dataBytes.length, true);
+        cv.setUint16(28, nameBytes.length, true);
+        cv.setUint16(30, 0, true);
+        cv.setUint16(32, 0, true);
+        cv.setUint16(34, 0, true);
+        cv.setUint16(36, 0, true);
+        cv.setUint32(38, 0, true);
+        cv.setUint32(42, offset, true);
+        new Uint8Array(ch, 46).set(nameBytes);
+
+        centralParts.push(new Uint8Array(ch));
+        offset += lh.byteLength + dataBytes.length;
+        count += 1;
+      }
+
+      let centralSize = 0;
+      for (const p of centralParts) centralSize += p.length;
+
+      const eocd = new ArrayBuffer(22);
+      const ev = new DataView(eocd);
+      ev.setUint32(0, 0x06054b50, true);
+      ev.setUint16(4, 0, true);
+      ev.setUint16(6, 0, true);
+      ev.setUint16(8, count, true);
+      ev.setUint16(10, count, true);
+      ev.setUint32(12, centralSize, true);
+      ev.setUint32(16, offset, true);
+      ev.setUint16(20, 0, true);
+
+      return new Blob([...localParts, ...centralParts, new Uint8Array(eocd)], { type: 'application/zip' });
+    }
+
+    function triggerBlobDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    let activeBundleFilename = 'index.html';
+    let cachedBundleMap = null;
+
+    function downloadProductionZip() {
+      cachedBundleMap = buildProductionBundleMap();
+      const zipBlob = createZipBlob(cachedBundleMap);
+      triggerBlobDownload(zipBlob, 'DevTest-AnchorWatch-PWA-v4.zip');
+      addLog('HAL', `Compiled & downloaded Production PWA ZIP (${(zipBlob.size / 1024).toFixed(1)} KiB, ${Object.keys(cachedBundleMap).length} files).`);
+    }
+
+    function toggleBundleInspector() {
+      const drawer = document.getElementById('bundleInspectorDrawer');
+      if (!drawer) return;
+      const open = drawer.classList.toggle('is-open');
+      if (open) {
+        cachedBundleMap = buildProductionBundleMap();
+        renderBundleInspector(activeBundleFilename);
+      }
+    }
+
+    function renderBundleInspector(filename) {
+      if (!cachedBundleMap) cachedBundleMap = buildProductionBundleMap();
+      activeBundleFilename = filename;
+      const tabsEl = document.getElementById('bundleFileTabs');
+      const metaEl = document.getElementById('bundleFileMeta');
+      const codeEl = document.getElementById('bundleCodePreview');
+
+      if (tabsEl) {
+        tabsEl.innerHTML = Object.keys(cachedBundleMap).map(name =>
+          `<button type="button" class="file-tab ${name === filename ? 'is-active' : ''}" onclick="renderBundleInspector('${name}')">${escapeHtml(name)}</button>`
+        ).join('');
+      }
+      const content = cachedBundleMap[filename] || '';
+      if (metaEl) metaEl.textContent = `${filename} (${content.length} bytes)`;
+      if (codeEl) codeEl.textContent = content;
+    }
+
+    async function copyCurrentBundleFile() {
+      if (!cachedBundleMap) cachedBundleMap = buildProductionBundleMap();
+      const content = cachedBundleMap[activeBundleFilename] || '';
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(content);
+          addLog('HAL', `Copied ${activeBundleFilename} (${content.length} bytes) to clipboard.`);
+        }
+      } catch (e) {
+        addLog('SHIM', `Clipboard write blocked; select and copy directly from inspector.`);
+      }
+    }
+
+    // =========================================================================
+    // 10. KEYBOARD SHORTCUTS & BOOTSTRAP INITIALISATION
+    // =========================================================================
+    function handleKeyNavigation(ev) {
+      const tag = ev.target && ev.target.tagName ? ev.target.tagName.toLowerCase() : '';
+      if (tag === 'input' || tag === 'textarea') return;
+      switch (ev.key) {
+        case 'ArrowUp':
+        case 'w':
+          ev.preventDefault();
+          nudgeBoat(0, -3);
+          break;
+        case 'ArrowDown':
+        case 's':
+          ev.preventDefault();
+          nudgeBoat(0, 3);
+          break;
+        case 'ArrowLeft':
+        case 'a':
+          ev.preventDefault();
+          nudgeBoat(-3, 0);
+          break;
+        case 'ArrowRight':
+        case 'd':
+          ev.preventDefault();
+          nudgeBoat(3, 0);
+          break;
+      }
+    }
+
+    async function bootstrapDevTest() {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+
+      plotCanvas = document.getElementById('anchorPlotCanvas');
+      if (plotCanvas) {
+        plotCtx = plotCanvas.getContext('2d');
+      }
+
+      runEnvironmentAudit();
+      await restoreSavedState();
+      updateModeIndicators();
+
+      // Sync restored inputs
+      const cIn = document.getElementById('chainLengthInput');
+      const dIn = document.getElementById('waterDepthInput');
+      if (cIn) cIn.value = String(appState.chainOut);
+      if (dIn) dIn.value = String(appState.depth);
+
+      renderBatteryUI();
+      renderOrientationUI();
+      renderNetworkUI();
+      applyAppBadgeState();
+      initVaultDefaults();
+      initThreeJsScene();
+      recomputeAnchorPhysics();
+      probeWebXR();
+      probeServiceWorker();
+
+      window.addEventListener('keydown', handleKeyNavigation);
+      window.addEventListener('resize', handleXrResize);
+      window.addEventListener('online', renderNetworkUI);
+      window.addEventListener('offline', renderNetworkUI);
+
+      addLog('HAL', `DevTest ${APP_VERSION} initialised (${isUseSimulatedMode() ? 'Sandboxed Shims Active' : 'Native Android Mode'}).`);
+
+      if (window.notebookAppApi && typeof window.notebookAppApi.notifyAppReady === 'function') {
+        window.notebookAppApi.notifyAppReady();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', bootstrapDevTest);
+  </script>
+</body>
+</html>

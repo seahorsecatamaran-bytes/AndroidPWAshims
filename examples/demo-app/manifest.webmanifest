@@ -1,0 +1,64 @@
+{
+  "name": "Anchor Watch NG // DevTest Harness",
+  "short_name": "AnchorWatch",
+  "description": "Marine anchor watch PWA with WebXR sea-surface overlay and Android hardware telemetry.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "categories": [
+    "navigation",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "./icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Drop Anchor",
+      "short_name": "Drop",
+      "url": "./index.html?action=drop",
+      "icons": [
+        {
+          "src": "./icon-192.svg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "WebXR Overlay",
+      "short_name": "WebXR",
+      "url": "./index.html?mode=xr",
+      "icons": [
+        {
+          "src": "./icon-192.svg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Share Watcher QR",
+      "short_name": "Watcher",
+      "url": "./index.html?action=share",
+      "icons": [
+        {
+          "src": "./icon-192.svg",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

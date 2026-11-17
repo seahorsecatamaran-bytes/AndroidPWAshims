@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DualMode PWA Toolkit // Android & WebXR v2.0</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1120;
+      --card: #131d33;
+      --border: #1e293b;
+      --cyan: #22d3ee;
+      --emerald: #34d399;
+      --amber: #fbbf24;
+      --text: #edf3f7;
+      --muted: #94a8be;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .container {
+      max-width: 720px;
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: rgba(34, 211, 238, 0.15);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 0.75rem;
+      color: #fff;
+    }
+    p {
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-link {
+      display: block;
+      text-decoration: none;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      transition: all 0.2s ease;
+      color: inherit;
+    }
+    .card-link:hover {
+      border-color: var(--cyan);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--cyan);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-desc {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    footer {
+      font-size: 0.8rem;
+      color: #64748b;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <span class="badge">Release v2.0.0</span>
+    <h1>DualMode PWA Toolkit</h1>
+    <p>Comprehensive library and test harness for progressive web applications with native Android hardware integration, WebXR sea-surface overlays, IndexedDB storage vaults, and dual-mode virtual shims.</p>
+
+    <div class="grid">
+      <a href="./examples/demo-app/" class="card-link">
+        <div class="card-title">🚀 Launch Interactive Test Harness (v4)</div>
+        <div class="card-desc">Full DevTest cockpit with 3D WebXR sea-plane viewport, simulated Android hardware sliders (battery, vibration, compass, BLE), and diagnostics terminal.</div>
+      </a>
+      <a href="./examples/production-pwa/" class="card-link">
+        <div class="card-title">📦 Production PWA Build</div>
+        <div class="card-desc">Standalone, installable production app with offline Service Worker caching, manifest.webmanifest, and schema migration handlers.</div>
+      </a>
+    </div>
+
+    <footer>
+      DualMode PWA Toolkit &bull; Ready for GitHub Pages &bull; Open Source MIT
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "dualmode-pwa-toolkit",
+  "version": "2.0.0",
+  "description": "Sandbox-aware PWA toolkit with virtual hardware shims, Android Chrome telemetry, WebXR spatial polyfills, IndexedDB auto-migrations, and client-side ZIP packaging.",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "npx serve -s ."
+  },
+  "keywords": [
+    "pwa",
+    "progressive-web-app",
+    "webxr",
+    "android",
+    "haptics",
+    "battery-status",
+    "wake-lock",
+    "indexeddb",
+    "service-worker",
+    "dual-mode",
+    "simulation",
+    "anchor-watch",
+    "jszip"
+  ],
+  "author": "PWA Anchor Watch NG Team",
+  "license": "MIT"
+}
