@@ -83,17 +83,6 @@ dualmode-pwa-toolkit/
 ## Live Demo & GitHub Pages URLs
 
 Once pushed to GitHub with Pages enabled on main branch:
-* Portal Hub: https://<your-username>.github.io/<repo-name>/
-* Interactive Test Harness (v4): https://<your-username>.github.io/<repo-name>/examples/demo-app/
-* Production PWA: https://<your-username>.github.io/<repo-name>/examples/production-pwa/
-
-## How to Update Your GitHub Repository
-
-1. Extract the downloaded dualmode-pwa-toolkit-v2.zip into your local git repository folder.
-2. In your terminal:
-   git add .
-   git commit -m "Update toolkit to v2.0 with Android hardware harness and WebXR overlay"
-   git push origin main
-3. In your GitHub repository settings under Pages, ensure Source is set to Deploy from a branch: main / (root).
-
-License: MIT
+* Portal Hub: https://seahorsecatamaran-bytes.github.io/AndroidPWAshims/
+* Interactive Test Harness (v4): https://seahorsecatamaran-bytes.github.io/AndroidPWAshims/examples/demo-app/
+* Production PWA: https://seahorsecatamaran-bytes.github.io/AndroidPWAshims/examples/production-pwa/
