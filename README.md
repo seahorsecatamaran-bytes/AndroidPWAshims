@@ -25,32 +25,59 @@ A production-grade architecture and library for writing Progressive Web Apps tha
 ## Repository Structure
 
 dualmode-pwa-toolkit/
+
 ├── index.html                      # GitHub Pages portal 
+
 ├── package.json                    # Package manifest & metadata
+
 ├── LICENSE                         # MIT License
+
 ├── README.md                       # Documentation & API reference
+
 ├── src/                            # Modular ES6 Library Source
+
 │   ├── index.js                    # Main library entry point
+
 │   ├── env/
+
 │   │   └── env-probe.js            # Environment detection & capability audit
+
 │   ├── hal/
+
 │   │   ├── index.js                # Hardware Abstraction Layer router
+
 │   │   ├── android-hardware.js     # Android vibration, battery, compass, BLE, badging
+
 │   │   ├── geo-shim.js             # Virtual GPS, drift simulator & key navigation
+
 │   │   ├── audio-shim.js           # Web Audio alert synthesizer & WAV encoder
+
 │   │   ├── notification-shim.js    # Floating toast notifications
+
 │   │   └── wakelock-shim.js        # Screen Wake Lock mock sentinel
+
 │   ├── storage/
+
 │   │   └── storage-vault.js        # IndexedDB migrations & binary audio blob store
+
 │   ├── sw/
+
 │   │   ├── sw-manager.js           # Service Worker registration & auto-update lifecycle
+
 │   │   └── sw-template.js          # Self-updating Service Worker source
+
 │   ├── xr/
+
 │   │   └── xr-shim.js              # WebXR session probe & spatial anchor polyfill
+
 │   └── packager/
+
 │       └── pwa-bundler.js          # In-browser ZIP compiler
+
 └── examples/
+
     ├── demo-app/                   # Full v4 Interactive Test Harness (Cockpit & 3D Viewport)
+    
     └── production-pwa/             # Unpacked Standalone Production Deployment
 
 ## Live Demo & GitHub Pages URLs
